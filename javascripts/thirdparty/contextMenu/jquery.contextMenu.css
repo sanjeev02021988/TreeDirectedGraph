@@ -16,14 +16,14 @@
     margin:0; 
     padding:0;
     
-    min-width: 120px;
+    min-width: 180px;
     max-width: 250px;
     display: inline-block;
     position: absolute;
     list-style-type: none;
     
     border: 1px solid #DDD;
-    background: #EEE;
+    background: #FFFFFF;
     
     -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
        -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
@@ -36,8 +36,8 @@
 }
 
 .context-menu-item {
-    padding: 2px 2px 2px 24px;
-    background-color: #EEE;
+    padding: 10px;
+    background-color: #FFFFFF;
     position: relative;
     -webkit-user-select: none;
        -moz-user-select: -moz-none;
@@ -60,7 +60,9 @@
 
 .context-menu-item.hover {
     cursor: pointer;
-    background-color: #39F;
+    box-shadow: 2px 0 0 0 #FB8C00 inset, inset 0 1px 0 0 #e6e6e6, inset 0 -1px 0 0 #e6e6e6;
+    color: #212121;
+    background: #f7f7f7;
 }
 
 .context-menu-item.disabled {

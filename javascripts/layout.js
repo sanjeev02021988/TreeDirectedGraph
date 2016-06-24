@@ -1,4 +1,4 @@
-function ForceLayout() {
+function Layout() {
     var thisRef = this;
     var force = null;
     var graph = null;
@@ -206,7 +206,7 @@ function ForceLayout() {
         $.contextMenu('destroy');
         var actionItems = {
             showInComingNodes: {
-                name: "Show all direct nodes",
+                name: "Connected Nodes...",
                 callback: function () {
                     d3.json("./json/"+nodeObj.name+".json", function (error, graphJson) {
                         if(!error){
@@ -219,14 +219,14 @@ function ForceLayout() {
         };
         if(isNodeHighlighted){
             actionItems.highLightNode = {
-                name: "Remove highlighting",
+                name: "Remove Highlighting...",
                 callback: function () {
                     highlightConnectedNodes(nodeObj);
                 }
             }
         }else{
             actionItems.highLightNode = {
-                name: "Highlight node",
+                name: "Apply Highlighting...",
                 callback: function () {
                     highlightConnectedNodes(nodeObj);
                 }
