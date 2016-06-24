@@ -18,9 +18,6 @@ function ForceLayout() {
         graph = tGraph;
         width = tWidth;
         height = tHeight;
-        appendSVG();
-        enableArrowHeads();
-        enableToolTip();
         initializeLayout();
         thisRef.drawEdge();
         thisRef.drawNode();
@@ -87,7 +84,6 @@ function ForceLayout() {
         attachLabelToNode();
         highlightConnectedNodes = enableHighlighting();
         attachEventsToNode();
-        //force.start();
         renderNode();
         renderEdge();
     };
@@ -183,12 +179,9 @@ function ForceLayout() {
     };
 
     var initializeLayout = function () {
-        //Initializing force layout.
-        /*force = d3.layout.force()
-            .size([width, height])
-            .nodes(graph.nodes)
-            .links(graph.links)
-            .linkDistance(width / 2).start();*/
+        appendSVG();
+        enableArrowHeads();
+        enableToolTip();
     };
 
     var enableArrowHeads = function () {
@@ -215,9 +208,11 @@ function ForceLayout() {
             showInComingNodes: {
                 name: "Show all direct nodes",
                 callback: function () {
-                    d3.json("./json/DS1.json", function (error, graphJson) {
-                        graphUtilityObj.updateNodesMap(graphJson, nodeObj.name);
-                        thisRef.update();
+                    d3.json("./json/"+nodeObj.name+".json", function (error, graphJson) {
+                        if(!error){
+                            graphUtilityObj.updateNodesMap(graphJson, nodeObj.name);
+                            thisRef.update();
+                        }
                     });
                 }
             }

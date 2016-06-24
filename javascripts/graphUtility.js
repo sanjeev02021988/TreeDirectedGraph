@@ -79,22 +79,12 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         }
         var linksKeyArr = Object.keys(thisRef.linksMap);
         var linksCount = linksKeyArr.length;
-        var prevLinkCount = thisRef.links.length;
-        if (prevLinkCount === 0) {
-            j = 0;
-        } else {
-            j = prevLinkCount;
-        }
-        for (; j < linksCount; j++) {
+        for (j = thisRef.links.length; j < linksCount; j++) {
             var linkObj = thisRef.linksMap[linksKeyArr[j]];
-            /*if (prevLinkCount === 0) {
-                thisRef.links[j] = linkObj;
-            } else {*/
-                thisRef.links[j] = {
-                    source: thisRef.nodes[linkObj.source],
-                    target: thisRef.nodes[linkObj.target]
-                };
-            //}
+            thisRef.links[j] = {
+                source: thisRef.nodes[linkObj.source],
+                target: thisRef.nodes[linkObj.target]
+            };
         }
     };
 }
