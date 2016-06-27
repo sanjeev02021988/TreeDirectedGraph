@@ -1,11 +1,12 @@
 var width = 1300,
-    height = 600,
+    height = 1500,
+    visibleHeight = 643,
     rootNodeId = "DRD1";
-var graphUtilityObj = new generateGraphData(height, width, 0, 0, 6);
+var graphUtilityObj = new generateGraphData(visibleHeight, width, 0, 0, 6);
 var layoutObj = new Layout();
 //Change graph to tree.json and rootNodeId to graphJson for complete tree layout.
 d3.json("./json/graph.json", function (error, graphJson) {
-    for (var i = 7; i < 10; i++) {
+    for (var i = 7; i < 48; i++) {
         var id = "Cube" + i;
         graphJson[rootNodeId].outgoing.push(id);
         graphJson[id] = {
@@ -33,6 +34,9 @@ $("#applyButton").on("click", function () {
     var labelDirection = $('input[name="nodeLabel"]:checked').val();
     var nodeRadius = $('#nodeRadius').val();
     var edgeColor = $('#edgeColor').val();
+    var minSpace = $('#minSpace').val();
+    var colCount = $('#colCount').val();
+    graphUtilityObj.updateNodesAndLinksArr(minSpace, colCount);
     layoutObj.reDraw(Number(nodeRadius), edgeType, edgeColor, labelDirection);
     $("#ConfigDialog").hide();
     $(".overlay-win").hide();
