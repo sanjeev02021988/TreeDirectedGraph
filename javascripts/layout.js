@@ -13,6 +13,11 @@ function Layout() {
     var color = d3.scale.category20();
     var highlightConnectedNodes = null;
     var isNodeHighlighted = false;
+    var svgParent = null;
+    var reRendering = false;
+    var edgeType = "STRAIGHT";
+    var edgeColor = "#999999";
+    var labelDirection = "RIGHT";
 
     thisRef.init = function (tGraph, tWidth, tHeight) {
         graph = tGraph;
@@ -24,13 +29,25 @@ function Layout() {
         highlightConnectedNodes = enableHighlighting();
     };
 
+    thisRef.reDraw = function (tRadius, tEdgeType, tEdgeColor, tLabelDirection) {
+        nodeRadius = tRadius;
+        edgeType = tEdgeType;
+        edgeColor = tEdgeColor;
+        labelDirection = tLabelDirection;
+        reRendering = true;
+        svgParent.remove();
+        thisRef.init(graph, width, height);
+        reRendering = false;
+    };
+
     thisRef.drawEdge = function () {
         //Describing properties of the edges.
         link = svg.append("g").selectAll("path")
             .data(graph.links)
             .enter().append("path")
             .attr("class", "link")
-            .attr("marker-end", "url(#end)");
+            .attr("marker-end", "url(#end)")
+            .style("stroke", edgeColor);
         renderEdge();
     };
 
@@ -39,7 +56,10 @@ function Layout() {
         link.attr("d", function (d) {
             var dx = d.target.x - d.source.x,
                 dy = d.target.y - d.source.y,
-                dr = 0;//Math.sqrt(dx * dx + dy * dy);
+                dr = 0;
+            if (edgeType === "CURVE") {
+                dr = Math.sqrt(dx * dx + dy * dy);
+            }
             return "M" +
                 d.source.x + "," +
                 d.source.y + "A" +
@@ -72,7 +92,9 @@ function Layout() {
         });
         link.enter().append("path")
             .attr("class", "link")
-            .attr("marker-end", "url(#end)");
+            .attr("marker-end", "url(#end)")
+            .style("stroke", edgeColor);
+        ;
 
         node = node.data(graph.nodes, function (d) {
             return d.name;
@@ -95,14 +117,29 @@ function Layout() {
     };
 
     var attachLabelToNode = function () {
+        var dx = nodeRadius + 5;
+        var dy = ".35em";
+        if (labelDirection === "CENTER" || labelDirection === "TOP" || labelDirection === "BOTTOM") {
+            dx = -nodeRadius / 2 - 5;
+            if (labelDirection === "TOP") {
+                dx = -nodeRadius;
+                dy = -nodeRadius / 2 - 10;
+            } else if (labelDirection === "BOTTOM") {
+                dx = -nodeRadius;
+                dy = nodeRadius + 10;
+            }
+        }
         //Adding label to the node.
         node.append("text")
-            .attr("dx", 25)
-            .attr("dy", ".35em")
+            .attr("dx", dx)
+            .attr("dy", dy)
             .text(function (d) {
+                if (d.labelled && !reRendering) {
+                    return "";
+                }
+                d.labelled = true;
                 return d.name;
-            })
-            .style("stroke", "black");
+            });
     };
 
     var attachEventsToNode = function () {
@@ -171,11 +208,30 @@ function Layout() {
     };
 
     var appendSVG = function () {
+        var zoom = d3.behavior.zoom()
+            .scaleExtent([1, 10])
+            //.translateExtent([[0, 0], [width, height]])
+            .on("zoom", zoomed);
+
         //Add svg to the body.
-        svg = d3.select('body')
-            .append('svg')
+        svgParent = d3.select('body')
+            .append('svg');
+        svg = svgParent
             .attr('width', width)
-            .attr('height', height);
+            .attr('height', height)
+            .append("g")
+            .call(zoom);
+
+        $("#ResetButton").on("click", reset);
+        function zoomed() {
+            svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        }
+
+        function reset() {
+            svg.attr("transform", "translate(0,0)scale(1)");
+            zoom.translate([0, 0]).scale(1);
+        }
+
     };
 
     var initializeLayout = function () {
@@ -193,13 +249,18 @@ function Layout() {
                 return d;
             })
             .attr("viewBox", "0 -5 10 10")
-            .attr("refX", 32)
-            .attr("refY", -2)
+            .attr("refX", function () {
+                return 10 + 11 * nodeRadius / 10;
+            })
+            .attr("refY", function () {
+                return (edgeType === "CURVE") ? -2 : 0;
+            })
             .attr("markerWidth", 6)
             .attr("markerHeight", 6)
             .attr("orient", "auto")
             .append("path")
-            .attr("d", "M0,-5L10,0L0,5");
+            .attr("d", "M0,-5L10,0L0,5")
+            .style("stroke", edgeColor).style("fill", edgeColor);
     };
 
     var showContextMenu = function (nodeObj) {
@@ -208,8 +269,8 @@ function Layout() {
             showInComingNodes: {
                 name: "Connected Nodes...",
                 callback: function () {
-                    d3.json("./json/"+nodeObj.name+".json", function (error, graphJson) {
-                        if(!error){
+                    d3.json("./json/" + nodeObj.name + ".json", function (error, graphJson) {
+                        if (!error) {
                             graphUtilityObj.updateNodesMap(graphJson, nodeObj.name);
                             thisRef.update();
                         }
@@ -217,14 +278,14 @@ function Layout() {
                 }
             }
         };
-        if(isNodeHighlighted){
+        if (isNodeHighlighted) {
             actionItems.highLightNode = {
                 name: "Remove Highlighting...",
                 callback: function () {
                     highlightConnectedNodes(nodeObj);
                 }
             }
-        }else{
+        } else {
             actionItems.highLightNode = {
                 name: "Apply Highlighting...",
                 callback: function () {

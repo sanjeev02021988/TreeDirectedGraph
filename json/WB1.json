@@ -1,0 +1,20 @@
+{
+    "WB1": {
+        "name": "WB1",
+        "depth": 4,
+        "incoming": ["Cube1"],
+        "outgoing": ["DB1", "DB2"]
+    },
+    "DB1": {
+        "name": "DB1",
+        "depth": 5
+    },
+    "DB2": {
+        "name": "DB2",
+        "depth": 5
+    },
+    "Cube1": {
+        "name": "Cube1",
+        "depth": 3
+    }
+}

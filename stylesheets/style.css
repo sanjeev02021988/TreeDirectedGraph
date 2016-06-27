@@ -1,14 +1,5 @@
-.node {
-    fill: #ccc;
-    stroke: #fff;
-    stroke-width: 2px;
-}
-
-.link {
-    stroke: #999;
-    stroke-opacity: 2px;
-}
-body{
+body {
+    margin: 0px;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -16,19 +7,126 @@ body{
     -ms-user-select: none;
     user-select: none;
 }
-span{
-    font: normal normal 13px/1 "roboto-regular", Arial;
-}
-.node text {
-    font: 12px helvetica;
-}
-path.link {
-    fill: none;
-    stroke: #666;
-    stroke-width: 1.5px;
+
+#navBar {
+    width: 100%;
+    height: 100px;
+    top: -90px;
+    background: #f7f7f7;
+    position: absolute;
+    z-index: 10;
 }
 
-d3-tip {
+#ResetButton {
+    top: 30px;
+    right: 120px;
+}
+
+#ConfigButton {
+    top: 30px;
+    right: 30px;
+}
+
+#applyButton {
+    bottom: 10px;
+    right: 30px;
+}
+
+#cancelButton {
+    bottom: 10px;
+    right: 100px;
+}
+
+button {
+    position: absolute;
+    background: white;
+    border: 1px solid #FB8C00;
+    color: #FB8C00;
+    padding: 10px;
+}
+
+span {
+    font: normal normal 13px/1 "roboto-regular", Arial;
+}
+
+.node {
+    fill: #ccc;
+    stroke: #fff;
+    stroke-width: 2px;
+}
+
+.node text {
+    font: 12px verdana;
+    stroke-width: 0.1;
+    fill: #000000;
+    stroke: #000000;
+}
+
+path.link {
+    fill: none;
+    stroke-width: 1.5px;
+    stroke-opacity: 2px;
+}
+
+.d3-tip {
     line-height: 1;
     color: black;
+}
+
+.overlay-win {
+    display: none;
+    z-index: 20;
+    background: #C8C8C8;
+    width: 1000%;
+    height: 1000%;
+    position: fixed;
+    top: -200%;
+    left: -300%;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.dialog {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    top: 15%;
+    left: 400px;
+    width: 600px;
+    height: 300px;
+    background: #FFFFFF;
+    box-shadow: 10px 8px 10px #888888;
+    border-radius: 3px;
+}
+
+.dialog-container {
+    margin: 20px;
+}
+
+.dialog-header {
+    font-weight: 300;
+    line-height: normal;
+    font: normal normal 19px/1 "roboto-light", Arial;
+}
+
+label {
+    color: #a6a6a6;
+    font: normal normal 15px/1 "roboto-light", Arial;
+}
+
+td {
+    padding: 5px;
+}
+
+input[type="text"] {
+    height: 30px;
+    border: 1px solid #cccccc;
+    background: #fff;
+    color: #212121;
+    box-sizing: border-box;
+    font: inherit;
+    padding: 0;
+    margin: 0;
+    resize: none;
+    vertical-align: middle;
+    line-height: normal
 }

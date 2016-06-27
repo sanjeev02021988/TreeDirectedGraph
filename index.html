@@ -4,13 +4,55 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Force Layout Example 1</title>
-        <link type="text/css" rel="stylesheet" href="stylesheets/style.css" />
-        <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css" />
+        <link type="text/css" rel="stylesheet" href="stylesheets/style.css"/>
+        <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css"/>
     </head>
     <body>
+        <button id="ResetButton">RESET</button>
+        <button id="ConfigButton">CONFIG</button>
+        <div id="ConfigDialog" class="dialog">
+            <div class="dialog-container">
+                <div>
+                    <span class="dialog-header" style="margin-left:5px;">CONFIG</span>
+                </div>
+                <table style="padding-top:30px">
+                    <tr style="margin-bottom:10px">
+                        <td style="width:20%"><label>Edge Type</label></td>
+                        <td style="width:50%">
+                            <label><input type="radio" name="edgeType" value="STRAIGHT" checked>Straight</label>
+                            <label><input type="radio" name="edgeType" value="CURVE">Curve</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>Edge Color</label></td>
+                        <td>
+                            <input type="text" id="edgeColor" value="#999999" style="padding-left:20px">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>Node Radius</label></td>
+                        <td>
+                            <input type="text" id="nodeRadius" value="20" style="padding-left:20px">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><label>Node Label</label></td>
+                        <td>
+                            <label><input type="radio" name="nodeLabel" value="RIGHT" checked>Right</label>
+                            <label><input type="radio" name="nodeLabel" value="TOP">Top</label>
+                            <label><input type="radio" name="nodeLabel" value="CENTER">Center</label>
+                            <label><input type="radio" name="nodeLabel" value="BOTTOM">Bottom</label>
+                        </td>
+                    </tr>
+                </table>
+                <button id="cancelButton">CANCEL</button>
+                <button id="applyButton">APPLY</button>
+            </div>
+        </div>
+        <div class="overlay-win" style="z-index: 20;"></div>
         <script src="./javascripts/thirdparty/jquery.min.js"></script>
         <script src="./javascripts/thirdparty/d3.v3.min.js"></script>
-        <script src="./javascripts/thirdparty/d3.tip.v0.6.3.js"> </script>
+        <script src="./javascripts/thirdparty/d3.tip.v0.6.3.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.contextMenu.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.ui.position.js"></script>
         <script src="./javascripts/graphUtility.js"></script>

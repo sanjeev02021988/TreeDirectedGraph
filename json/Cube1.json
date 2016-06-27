@@ -1,0 +1,24 @@
+{
+    "Cube1": {
+        "name": "Cube1",
+        "depth": 3,
+        "incoming": ["DRD1"],
+        "outgoing": ["WB1", "WB2", "WB3"]
+    },
+    "WB1": {
+        "name": "WB1",
+        "depth": 4
+    },
+    "WB2": {
+        "name": "WB2",
+        "depth": 4
+    },
+    "WB3": {
+        "name": "WB3",
+        "depth": 4
+    },
+    "DRD1": {
+        "name": "DRD1",
+        "depth": 2
+    }
+}
