@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!-- saved from url=(0041)https://bl.ocks.org/mbostock/raw/4063570/ -->
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Force Layout Example 1</title>
+        <title>Related Entities</title>
         <link type="text/css" rel="stylesheet" href="stylesheets/style.css"/>
+        <link type="text/css" rel="stylesheet" href="stylesheets/bootstrap.min.css"/>
         <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css"/>
     </head>
     <body>
@@ -13,60 +13,75 @@
         <div id="ConfigDialog" class="dialog">
             <div class="dialog-container">
                 <div>
-                    <span class="dialog-header" style="margin-left:5px;">CONFIG</span>
+                    <h3 style="color: #a6a6a6;">CONFIG</h3>
                 </div>
-                <table style="padding-top:30px">
-                    <tr style="margin-bottom:10px">
-                        <td style="width:20%"><label>Edge Type</label></td>
-                        <td style="width:50%">
-                            <label><input type="radio" name="edgeType" value="STRAIGHT" checked>Straight</label>
-                            <label><input type="radio" name="edgeType" value="CURVE">Curve</label>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label>Edge Color</label></td>
-                        <td>
-                            <input type="text" id="edgeColor" value="#999999" style="padding-left:20px">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label>Node Radius</label></td>
-                        <td>
-                            <input type="text" id="nodeRadius" value="20" style="padding-left:20px">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label>Minimum Spacing</label></td>
-                        <td>
-                            <input type="text" id="minSpace" value="50" style="padding-left:20px">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label>Max. Columns</label></td>
-                        <td>
-                            <input type="text" id="colCount" value="1" style="padding-left:20px">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label>Node Label</label></td>
-                        <td>
-                            <label><input type="radio" name="nodeLabel" value="RIGHT" checked>Right</label>
-                            <label><input type="radio" name="nodeLabel" value="TOP">Top</label>
-                            <label><input type="radio" name="nodeLabel" value="CENTER">Center</label>
-                            <label><input type="radio" name="nodeLabel" value="BOTTOM">Bottom</label>
-                        </td>
-                    </tr>
-                </table>
+                <form style="margin-top:30px;">
+                    <div class="form-group row">
+                        <label for="minSpace" class="col-sm-4 form-control-label">Minimum Spacing</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" id="minSpace" value="50" placeholder="Radius">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="colCount" class="col-sm-4 form-control-label">Max. Columns</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" id="colCount" value="1" placeholder="Radius">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="edgeColor" class="col-sm-4 form-control-label">Edge Color</label>
+                        <div class="col-sm-4">
+                            <input type="text" class="form-control" id="edgeColor" value="#999999" placeholder="Color">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-4">Edge Type</label>
+                        <div class="col-sm-8">
+                            <label class="radio-inline">
+                                <input type="radio" name="edgeType" value="STRAIGHT" checked>
+                                Straight
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="edgeType" value="CURVE">
+                                Curve
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="nodeRadius" class="col-sm-4 form-control-label">Node Radius</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" id="nodeRadius" value="20" placeholder="Radius">
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-4">Node Label</label>
+                        <div class="col-sm-8">
+                            <label class="radio-inline">
+                                <input type="radio" name="nodeLabel" value="RIGHT" checked>Right
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="nodeLabel" value="CENTER">Center
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="nodeLabel" value="BOTTOM">Bottom
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="nodeLabel" value="TOP">Top
+                            </label>
+                        </div>
+                    </div>
+                </form>
                 <button id="cancelButton">CANCEL</button>
                 <button id="applyButton">APPLY</button>
             </div>
         </div>
-        <div class="overlay-win" style="z-index: 20;"></div>
+        <div class="overlay-win"></div>
         <script src="./javascripts/thirdparty/jquery.min.js"></script>
         <script src="./javascripts/thirdparty/d3.v3.min.js"></script>
         <script src="./javascripts/thirdparty/d3.tip.v0.6.3.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.contextMenu.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.ui.position.js"></script>
+        <script src="./javascripts/thirdparty/bootstrap.min.js"></script>
         <script src="./javascripts/graphUtility.js"></script>
         <script src="javascripts/layout.js"></script>
         <script src="./javascripts/graph.js"></script>

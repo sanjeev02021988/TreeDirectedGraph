@@ -24,9 +24,13 @@ $("#ConfigButton").on("click", function () {
     $(".overlay-win").show();
 });
 
-$("#cancelButton").on("click", function () {
+function hideConfigDialog() {
     $("#ConfigDialog").hide();
     $(".overlay-win").hide();
+}
+
+$("#cancelButton").on("click", function () {
+    hideConfigDialog();
 });
 
 $("#applyButton").on("click", function () {
@@ -38,6 +42,5 @@ $("#applyButton").on("click", function () {
     var colCount = $('#colCount').val();
     graphUtilityObj.updateNodesAndLinksArr(minSpace, colCount);
     layoutObj.reDraw(Number(nodeRadius), edgeType, edgeColor, labelDirection);
-    $("#ConfigDialog").hide();
-    $(".overlay-win").hide();
+    hideConfigDialog();
 });
