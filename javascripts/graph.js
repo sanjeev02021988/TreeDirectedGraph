@@ -20,19 +20,19 @@ d3.json("./json/graph.json", function (error, graphJson) {
     }
     //Convert tree json into graph obj which has nodes and edges.
     var graph = graphUtilityObj.updateNodesMap(graphJson, rootNodeId);
-    layoutObj.init("svgContainer", graph, svgWidth, svgHeight, nodeRadius);
+    layoutObj.init("mainSvgContainer", graph, svgWidth, svgHeight, nodeRadius);
     var heightUsedOfSvg = graphUtilityObj.getHeightUsedOfSvg() + nodeRadius * 2;
     updateHeightOfContainerDiv(heightUsedOfSvg, visibleWidth);
 });
 
 function updateHeightOfContainerDiv (height, width){
     if(isScrollingEnabled){
-        $("#svgContainer").css({
+        $("#mainSvgContainer").css({
             height:height+"px",
             width:width+"px"
         });
     }else{
-        $("#svgContainer").css({
+        $("#mainSvgContainer").css({
             height:visibleHeight+"px",
             width:visibleWidth+"px"
         });

@@ -81,6 +81,16 @@ path.link {
     color: black;
 }
 
+#miniSvgContainer{
+    height:200px;
+    width:250px;
+    position:absolute;
+    z-index:15;
+    left:10px;
+    top:10px;
+    border:1px dashed black;
+}
+
 .overlay-win {
     display: none;
     position: fixed;

@@ -31,7 +31,21 @@ function Layout() {
         highlightConnectedNodes = enableHighlighting();
         //enableDragging();
         enableSelection();
+        d3.select("#miniSVG").on("mouseover",function(){
+            $(this).closest("div").hide();
+        }).select("g")
+        .attr("transform", "scale(" + 0.2 + ")");
     };
+
+    thisRef.reDraw = function (tRadius, tEdgeType, tEdgeColor, tLabelDirection) {
+        nodeRadius = tRadius;
+        edgeType = tEdgeType;
+        edgeColor = tEdgeColor;
+        labelDirection = tLabelDirection;
+        svgParent.select("g").remove();
+        thisRef.init(containerId, graph, width, height, nodeRadius);
+    };
+
     var draggingEnabled = true;
     function enableDragging (){
         var drag = d3.behavior.drag()
@@ -114,15 +128,6 @@ function Layout() {
                 svgParent.selectAll( "rect.selection").remove();
             });
     }
-
-    thisRef.reDraw = function (tRadius, tEdgeType, tEdgeColor, tLabelDirection) {
-        nodeRadius = tRadius;
-        edgeType = tEdgeType;
-        edgeColor = tEdgeColor;
-        labelDirection = tLabelDirection;
-        svgParent.remove();
-        thisRef.init(containerId, graph, width, height, nodeRadius);
-    };
 
     thisRef.drawEdge = function () {
         //Describing properties of the edges.
@@ -337,8 +342,8 @@ function Layout() {
 
     var appendSVG = function () {
         //Add svg to the body.
-        svgParent = d3.select('#' + containerId)
-            .append('svg');
+        svgParent = d3.selectAll(".graphSVG");
+        //.append('svg');
         svg = svgParent
             .attr('width', width)
             .attr('height', height)

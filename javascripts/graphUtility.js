@@ -5,52 +5,47 @@ function generateGraphData(height, width, x0, y0, paneCount) {
     thisRef.paneNodesCount = [];
     thisRef.nodes = [];
     thisRef.links = [];
-    var nodeCount = 0;
     var maxColumns = 1;
     var minSpacing = 25;
     var heightUsedOfSvg = 0;
     //Change rootNodeId to root and comment first line of the function for complete tree layout.
-    thisRef.updateNodesMap = function (graphJson, rootNodeId, direction, parentIndex) {
-        var root = graphJson[rootNodeId];
-        var currentIndex;
-        if (typeof thisRef.nodesMap[root.name] === "undefined") {
-            var newIndex = nodeCount;
-            thisRef.nodesMap[root.name] = {
+    thisRef.updateNodesMap = function (graphJson, nodeId, direction, parentNodeId) {
+        var root = graphJson[nodeId];
+        if (typeof thisRef.nodesMap[nodeId] === "undefined") {
+            thisRef.nodesMap[nodeId] = {
                 name: root.name,
-                index: newIndex,
-                fixed: true,
-                level: root.depth
+                id: nodeId,
+                level: root.depth,
+                isNew: true
             };
-            nodeCount++;
             if (typeof thisRef.paneNodesCount[root.depth] === "undefined") {
                 thisRef.paneNodesCount[root.depth] = [];
             }
-            thisRef.paneNodesCount[root.depth].push(root.name);
+            thisRef.paneNodesCount[root.depth].push(nodeId);
         }
-        currentIndex = thisRef.nodesMap[root.name].index;
         if (root.incoming) {
             var childLength = root.incoming.length;
             for (var i = 0; i < childLength; i++) {
-                thisRef.updateNodesMap(graphJson, root.incoming[i], -1, currentIndex);
+                thisRef.updateNodesMap(graphJson, root.incoming[i], -1, nodeId);
             }
         }
         if (root.outgoing) {
             var childLength = root.outgoing.length;
             for (var i = 0; i < childLength; i++) {
-                thisRef.updateNodesMap(graphJson, root.outgoing[i], 1, currentIndex);
+                thisRef.updateNodesMap(graphJson, root.outgoing[i], 1, nodeId);
             }
         }
-        if (typeof parentIndex !== "undefined") {
+        if (typeof parentNodeId !== "undefined") {
             var key = "";
             if (direction !== -1) {
-                key = parentIndex + "_" + currentIndex;
+                key = parentNodeId + "_" + nodeId;
                 if (!thisRef.linksMap[key]) {
-                    thisRef.linksMap[key] = {source: parentIndex, target: currentIndex};
+                    thisRef.linksMap[key] = {source: parentNodeId, target: nodeId};
                 }
             } else {
-                key = currentIndex + "_" + parentIndex;
+                key = nodeId + "_" + parentNodeId;
                 if (!thisRef.linksMap[key]) {
-                    thisRef.linksMap[key] = {source: currentIndex, target: parentIndex};
+                    thisRef.linksMap[key] = {source: nodeId, target: parentNodeId};
                 }
             }
         } else {
@@ -108,8 +103,9 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                 if (colIndex % 2) {
                     nodeObj.y += minSpacing / 2;
                 }
-                if (!thisRef.nodes[nodeObj.index]) {
-                    thisRef.nodes[nodeObj.index] = nodeObj;
+                if (nodeObj.isNew) {
+                    thisRef.nodes.push(nodeObj);
+                    delete nodeObj.isNew;
                 }
             }
             if(nodeObj.y > heightUsedOfSvg){
@@ -156,8 +152,8 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         for (paneIndex = thisRef.links.length; paneIndex < linksCount; paneIndex++) {
             var linkObj = thisRef.linksMap[linksKeyArr[paneIndex]];
             thisRef.links[paneIndex] = {
-                source: thisRef.nodes[linkObj.source],
-                target: thisRef.nodes[linkObj.target]
+                source: thisRef.nodesMap[linkObj.source],
+                target: thisRef.nodesMap[linkObj.target]
             };
         }
     };
