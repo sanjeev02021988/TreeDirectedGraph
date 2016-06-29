@@ -1,10 +1,33 @@
-body {
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+/* disable text selection */
+svg *::selection {
+    background : transparent;
+}
+
+svg *::-moz-selection {
+    background:transparent;
+}
+
+svg *::-webkit-selection {
+    background:transparent;
+}
+/*http://bl.ocks.org/lgersman/5311083*/
+rect.selection {
+    stroke          : gray;
+    stroke-dasharray: 4px;
+    stroke-opacity  : 0.5;
+    fill            : transparent;
+}
+
+g.node circle.outer {
+    display: none;
+    stroke: red;
+    stroke-width: 1px;
+    stroke-dasharray: 4px;
+    fill: transparent;
+}
+
+g.node.selected circle.outer {
+    display         : inline;
 }
 
 button {
@@ -64,6 +87,8 @@ path.link {
     z-index: 20;
     width: 100%;
     height: 100%;
+    top:0px;
+    left:0px;
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -74,7 +99,7 @@ path.link {
     top: 15%;
     left: 400px;
     width: 500px;
-    height: 450px;
+    height: 500px;
     background: #FFFFFF;
     box-shadow: 10px 8px 10px #888888;
     border-radius: 3px;

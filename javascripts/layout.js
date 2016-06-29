@@ -14,30 +14,114 @@ function Layout() {
     var highlightConnectedNodes = null;
     var isNodeHighlighted = false;
     var svgParent = null;
-    var reRendering = false;
     var edgeType = "STRAIGHT";
     var edgeColor = "#999999";
     var labelDirection = "RIGHT";
+    var containerId = "";
 
-    thisRef.init = function (tGraph, tWidth, tHeight) {
+    thisRef.init = function (tContainerId, tGraph, tWidth, tHeight, tNodeRadius) {
+        containerId = tContainerId;
         graph = tGraph;
         width = tWidth;
         height = tHeight;
+        nodeRadius = tNodeRadius;
         initializeLayout();
         thisRef.drawEdge();
         thisRef.drawNode();
         highlightConnectedNodes = enableHighlighting();
+        //enableDragging();
+        enableSelection();
     };
+    var draggingEnabled = true;
+    function enableDragging (){
+        var drag = d3.behavior.drag()
+            .on("drag", function(d,i) {
+                d.x += d3.event.dx;
+                d.y += d3.event.dy;
+                d3.select(this).attr("transform", function(d,i){
+                    return "translate(" + [ d.x,d.y ] + ")"
+                });
+                renderEdge(true);
+            });
+        node.call(drag);
+    }
+    var selectedNodes = [];
+    function enableSelection(){
+        svgParent.on( "mousedown", function() {
+                if(d3.event.button === 0) {
+                    selectedNodes = [];
+                    d3.selectAll( 'g.node.selected').classed( "selected", false);
+                }
+                var p = d3.mouse( this);
+                svgParent.append( "rect")
+                    .attr({
+                        rx      : 6,
+                        ry      : 6,
+                        class   : "selection",
+                        x       : p[0],
+                        y       : p[1],
+                        width   : 0,
+                        height  : 0
+                    })
+            })
+            .on( "mousemove", function() {
+                /*if(draggingEnabled){
+                    svgParent.selectAll( "rect.selection").remove();
+                    return;
+                }*/
+                var s = svgParent.select( "rect.selection");
+                if( !s.empty()) {
+                    var p = d3.mouse( this),
+                        d = {
+                            x       : parseInt( s.attr( "x"), 10),
+                            y       : parseInt( s.attr( "y"), 10),
+                            width   : parseInt( s.attr( "width"), 10),
+                            height  : parseInt( s.attr( "height"), 10)
+                        },
+                        move = {
+                            x : p[0] - d.x,
+                            y : p[1] - d.y
+                        };
+                    if( move.x < 1 || (move.x*2<d.width)) {
+                        d.x = p[0];
+                        d.width -= move.x;
+                    } else {
+                        d.width = move.x;
+                    }
+                    if( move.y < 1 || (move.y*2<d.height)) {
+                        d.y = p[1];
+                        d.height -= move.y;
+                    } else {
+                        d.height = move.y;
+                    }
+                    s.attr( d);
+                    d3.selectAll( 'g.node > circle').each( function( node_data, i) {
+                        if(!d3.select( this).classed( "selected")){
+                            //Inner circle inside selection frame
+                            if(node_data.x-nodeRadius>=d.x && node_data.x+nodeRadius<=d.x+d.width && node_data.y-nodeRadius>=d.y && node_data.y+nodeRadius<=d.y+d.height){
+                                d3.select( this.parentNode).classed( "selected", true);
+                                selectedNodes[node_data.name] = 1;
+                            }else{
+                                d3.select( this.parentNode).classed( "selected", false);
+                                delete selectedNodes[node_data.name];
+                            }
+                        }
+                    });
+                }
+            })
+            .on( "mouseup", function() {
+                //Remove selection frame
+                svgParent.selectAll( "rect.selection").remove();
+            });
+    }
 
     thisRef.reDraw = function (tRadius, tEdgeType, tEdgeColor, tLabelDirection) {
         nodeRadius = tRadius;
         edgeType = tEdgeType;
         edgeColor = tEdgeColor;
         labelDirection = tLabelDirection;
-        reRendering = true;
         svgParent.remove();
-        thisRef.init(graph, width, height);
-        reRendering = false;
+        thisRef.init(containerId, graph, width, height, nodeRadius);
     };
 
     thisRef.drawEdge = function () {
@@ -51,24 +135,6 @@ function Layout() {
         renderEdge();
     };
 
-    var renderEdge = function () {
-        //Appending edges to the layout.
-        link.attr("d", function (d) {
-            var dx = d.target.x - d.source.x,
-                dy = d.target.y - d.source.y,
-                dr = 0;
-            if (edgeType === "CURVE") {
-                dr = Math.sqrt(dx * dx + dy * dy);
-            }
-            return "M" +
-                d.source.x + "," +
-                d.source.y + "A" +
-                dr + "," + dr + " 0 0,1 " +
-                d.target.x + "," +
-                d.target.y;
-        });
-    };
-
     thisRef.drawNode = function () {
         //Describing properties of the nodes.
         node = svg.selectAll('.node')
@@ -77,6 +143,9 @@ function Layout() {
             .attr("class", "node");
 
         //Adding circle to the g tag of the node.
+        node.append("circle").attr({
+            'r': nodeRadius + 4,
+            class:'outer'});
         node.append("circle").attr('r', nodeRadius)
             .style("fill", function (d) {
                 return color(d.level);
@@ -86,7 +155,7 @@ function Layout() {
         attachEventsToNode();
     };
 
-    thisRef.update = function () {
+    thisRef.update = function (sourceNode) {
         link = link.data(graph.links, function (d) {
             return d.source.name + "-" + d.target.name;
         });
@@ -94,29 +163,69 @@ function Layout() {
             .attr("class", "link")
             .attr("marker-end", "url(#end)")
             .style("stroke", edgeColor);
-        ;
 
         node = node.data(graph.nodes, function (d) {
             return d.name;
         });
-        node.enter().append("g").attr("class", "node").append("circle").attr('r', 20)
+        var newNodes = node.enter().append("g");
+        newNodes.attr("class", "node").append("circle").attr('r', nodeRadius)
             .style("fill", function (d) {
+                d.new = true;
                 return color(d.level);
             });
-        attachLabelToNode();
+        attachLabelToNode(newNodes);
         highlightConnectedNodes = enableHighlighting();
         attachEventsToNode();
         renderNode();
         renderEdge();
     };
 
-    var renderNode = function () {
-        node.attr("transform", function (d) {
-            return "translate(" + d.x + "," + d.y + ")";
-        });
+    var renderNode = function (parentNode, newNodes) {
+        /*if(parentNode){
+         /*newNodes.attr("transform", function (d) {
+         d.updated = true;
+         d.x -= parentNode.x;
+         d.y -= parentNode.y;
+         return "translate(" + parentNode.x + "," + parentNode.y + ")";
+         });
+         }*/
+        node.transition().ease("linear")
+            .duration(600).attr("transform", function (d) {
+                var x = d.x;
+                var y = d.y;
+                /*if(d.updated){
+                 d.x += parentNode.x;
+                 d.y += parentNode.y;
+                 delete d.updated;
+                 }*/
+                return "translate(" + x + "," + y + ")";
+            });
     };
 
-    var attachLabelToNode = function () {
+    var renderEdge = function (skipAnimation) {
+        var tempLinkObj = link;
+        //Appending edges to the layout.
+        if(!skipAnimation){
+            tempLinkObj = link.transition().ease("linear")
+                .duration(600);
+        }
+        tempLinkObj.attr("d", function (d) {
+                var dx = d.target.x - d.source.x,
+                    dy = d.target.y - d.source.y,
+                    dr = 0;
+                if (edgeType === "CURVE") {
+                    dr = Math.sqrt(dx * dx + dy * dy);
+                }
+                return "M" +
+                    d.source.x + "," +
+                    d.source.y + "A" +
+                    dr + "," + dr + " 0 0,1 " +
+                    d.target.x + "," +
+                    d.target.y;
+            });
+    };
+
+    var attachLabelToNode = function (newNodes) {
         var dx = nodeRadius + 5;
         var dy = ".35em";
         if (labelDirection === "CENTER" || labelDirection === "TOP" || labelDirection === "BOTTOM") {
@@ -129,15 +238,14 @@ function Layout() {
                 dy = nodeRadius + 10;
             }
         }
+        if (!newNodes) {
+            newNodes = node;
+        }
         //Adding label to the node.
-        node.append("text")
+        newNodes.append("text")
             .attr("dx", dx)
             .attr("dy", dy)
             .text(function (d) {
-                if (d.labelled && !reRendering) {
-                    return "";
-                }
-                d.labelled = true;
                 return d.name;
             });
     };
@@ -149,7 +257,10 @@ function Layout() {
             showContextMenu(d);
         }).on('mouseover', tip.show) //Added
             .on('mouseout', tip.hide) //Added
-            .on('click', highlightConnectedNodes);
+            .on('click', highlightConnectedNodes)
+            .on( "mousedown", function() {
+                draggingEnabled = true;
+            });
     };
 
     var enableHighlighting = function () {
@@ -206,35 +317,37 @@ function Layout() {
             });
         svg.call(tip);
     };
-
-    var appendSVG = function () {
-        var zoom = d3.behavior.zoom()
-            .scaleExtent([1, 10])
+    var zoom = null;
+    function enableZooming(){
+        zoom = d3.behavior.zoom()
+            .scaleExtent([0.1, 3])
             //.translateExtent([[0, 0], [width, height]])
             .on("zoom", zoomed);
 
+        function zoomed() {
+            svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+        }
+
+        $("#ResetButton").on("click", reset);
+        function reset() {
+            svg.attr("transform", "translate(0,0)scale(1)");
+            zoom.translate([0, 0]).scale(1);
+        }
+    }
+
+    var appendSVG = function () {
         //Add svg to the body.
-        svgParent = d3.select('body')
+        svgParent = d3.select('#' + containerId)
             .append('svg');
         svg = svgParent
             .attr('width', width)
             .attr('height', height)
             .append("g")
             .call(zoom);
-
-        $("#ResetButton").on("click", reset);
-        function zoomed() {
-            svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-        }
-
-        function reset() {
-            svg.attr("transform", "translate(0,0)scale(1)");
-            zoom.translate([0, 0]).scale(1);
-        }
-
     };
 
     var initializeLayout = function () {
+        enableZooming();
         appendSVG();
         enableArrowHeads();
         enableToolTip();
@@ -262,7 +375,6 @@ function Layout() {
             .attr("d", "M0,-5L10,0L0,5")
             .style("stroke", edgeColor).style("fill", edgeColor);
     };
-
     var showContextMenu = function (nodeObj) {
         $.contextMenu('destroy');
         var actionItems = {
@@ -272,7 +384,7 @@ function Layout() {
                     d3.json("./json/" + nodeObj.name + ".json", function (error, graphJson) {
                         if (!error) {
                             graphUtilityObj.updateNodesMap(graphJson, nodeObj.name);
-                            thisRef.update();
+                            thisRef.update(nodeObj);
                         }
                     });
                 }
@@ -293,6 +405,17 @@ function Layout() {
                 }
             }
         }
+        actionItems.createCab = {
+            name: "Generate CAB...",
+            callback: function () {
+                var selectedNodeIds = Object.keys(selectedNodes);
+                if(selectedNodeIds.length === 0){
+                    alert(nodeObj.name);
+                }else{
+                    alert(selectedNodeIds.join());
+                }
+            }
+        };
         $.contextMenu({
             selector: 'g.node',
             items: actionItems

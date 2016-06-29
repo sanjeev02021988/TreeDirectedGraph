@@ -8,6 +8,8 @@
         <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css"/>
     </head>
     <body>
+        <div id="svgContainer" style="overflow:hidden">
+        </div>
         <button id="ResetButton">RESET</button>
         <button id="ConfigButton">CONFIG</button>
         <div id="ConfigDialog" class="dialog">
@@ -19,13 +21,13 @@
                     <div class="form-group row">
                         <label for="minSpace" class="col-sm-4 form-control-label">Minimum Spacing</label>
                         <div class="col-sm-4">
-                            <input type="text" class="form-control" id="minSpace" value="50" placeholder="Radius">
+                            <input type="text" class="form-control" id="minSpace" value="25" placeholder="Spacing">
                         </div>
                     </div>
                     <div class="form-group row">
                         <label for="colCount" class="col-sm-4 form-control-label">Max. Columns</label>
                         <div class="col-sm-4">
-                            <input type="text" class="form-control" id="colCount" value="1" placeholder="Radius">
+                            <input type="text" class="form-control" id="colCount" value="1" placeholder="Columns">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -50,17 +52,17 @@
                     <div class="form-group row">
                         <label for="nodeRadius" class="col-sm-4 form-control-label">Node Radius</label>
                         <div class="col-sm-3">
-                            <input type="text" class="form-control" id="nodeRadius" value="20" placeholder="Radius">
+                            <input type="text" class="form-control" id="nodeRadius" value="10" placeholder="Radius">
                         </div>
                     </div>
                     <div class="form-group row">
                         <label class="col-sm-4">Node Label</label>
                         <div class="col-sm-8">
                             <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="RIGHT" checked>Right
+                                <input type="radio" name="nodeLabel" value="CENTER">Center
                             </label>
                             <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="CENTER">Center
+                                <input type="radio" name="nodeLabel" value="RIGHT" checked>Right
                             </label>
                             <label class="radio-inline">
                                 <input type="radio" name="nodeLabel" value="BOTTOM">Bottom
@@ -68,6 +70,16 @@
                             <label class="radio-inline">
                                 <input type="radio" name="nodeLabel" value="TOP">Top
                             </label>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-4"></label>
+                        <div class="col-sm-8">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="enableScroll" checked> Enabling Scrolling.
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </form>

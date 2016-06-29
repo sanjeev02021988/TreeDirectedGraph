@@ -7,7 +7,8 @@ function generateGraphData(height, width, x0, y0, paneCount) {
     thisRef.links = [];
     var nodeCount = 0;
     var maxColumns = 1;
-    var minSpacing = 50;
+    var minSpacing = 25;
+    var heightUsedOfSvg = 0;
     //Change rootNodeId to root and comment first line of the function for complete tree layout.
     thisRef.updateNodesMap = function (graphJson, rootNodeId, direction, parentIndex) {
         var root = graphJson[rootNodeId];
@@ -65,6 +66,10 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         return height / minSpacing;
     };
 
+    thisRef.getHeightUsedOfSvg = function(){
+        return heightUsedOfSvg;
+    };
+
     var updateNodesPositionVerticalPanesWise = function (paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, isNodeCountExceeded) {
         var isOddColsReq = true;
         if (!numberOfColsRequired) {
@@ -90,9 +95,10 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                     x_currentPaneCenter += ((2 * colIndex + 1 - numberOfColsRequired) * minSpacing) / 2;
                 }
             }
+            var nodeObj = null;
             for (var k = 0; k < numberOfNodesRenderInCurrentColumn; k++) {
                 var childKey = thisRef.paneNodesCount[paneIndex][colIndex * numberOfNodesRenderPerColumn + k];
-                var nodeObj = thisRef.nodesMap[childKey];
+                nodeObj = thisRef.nodesMap[childKey];
                 nodeObj.x = x_currentPaneCenter;
                 if (isNodeCountExceeded) {
                     nodeObj.y = y0 + (2 * k + 1) * (minSpacing) / 2;
@@ -106,10 +112,14 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                     thisRef.nodes[nodeObj.index] = nodeObj;
                 }
             }
+            if(nodeObj.y > heightUsedOfSvg){
+                heightUsedOfSvg = nodeObj.y;
+            }
         }
     };
 
     thisRef.updateNodesAndLinksArr = function (tMinSpacing, tMaxColumns) {
+        heightUsedOfSvg = 0;
         minSpacing = tMinSpacing;
         maxColumns = tMaxColumns;
         var maxNodesPossibleInColumn = getMaxNodesPossibleInColumn();
