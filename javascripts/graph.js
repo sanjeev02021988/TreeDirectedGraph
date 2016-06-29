@@ -19,22 +19,22 @@ d3.json("./json/graph.json", function (error, graphJson) {
         }
     }
     //Convert tree json into graph obj which has nodes and edges.
-    var graph = graphUtilityObj.updateNodesMap(graphJson, rootNodeId);
+    var graph = graphUtilityObj.getGraphObj(graphJson, rootNodeId);
     layoutObj.init("mainSvgContainer", graph, svgWidth, svgHeight, nodeRadius);
     var heightUsedOfSvg = graphUtilityObj.getHeightUsedOfSvg() + nodeRadius * 2;
     updateHeightOfContainerDiv(heightUsedOfSvg, visibleWidth);
 });
 
-function updateHeightOfContainerDiv (height, width){
-    if(isScrollingEnabled){
+function updateHeightOfContainerDiv(height, width) {
+    if (isScrollingEnabled) {
         $("#mainSvgContainer").css({
-            height:height+"px",
-            width:width+"px"
+            height: height + "px",
+            width: width + "px"
         });
-    }else{
+    } else {
         $("#mainSvgContainer").css({
-            height:visibleHeight+"px",
-            width:visibleWidth+"px"
+            height: visibleHeight + "px",
+            width: visibleWidth + "px"
         });
     }
 }

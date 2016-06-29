@@ -5,64 +5,127 @@ function generateGraphData(height, width, x0, y0, paneCount) {
     thisRef.paneNodesCount = [];
     thisRef.nodes = [];
     thisRef.links = [];
+
     var maxColumns = 1;
     var minSpacing = 25;
+
     var heightUsedOfSvg = 0;
-    //Change rootNodeId to root and comment first line of the function for complete tree layout.
-    thisRef.updateNodesMap = function (graphJson, nodeId, direction, parentNodeId) {
-        var root = graphJson[nodeId];
-        if (typeof thisRef.nodesMap[nodeId] === "undefined") {
-            thisRef.nodesMap[nodeId] = {
-                name: root.name,
-                id: nodeId,
-                level: root.depth,
-                isNew: true
-            };
-            if (typeof thisRef.paneNodesCount[root.depth] === "undefined") {
-                thisRef.paneNodesCount[root.depth] = [];
-            }
-            thisRef.paneNodesCount[root.depth].push(nodeId);
-        }
-        if (root.incoming) {
-            var childLength = root.incoming.length;
-            for (var i = 0; i < childLength; i++) {
-                thisRef.updateNodesMap(graphJson, root.incoming[i], -1, nodeId);
-            }
-        }
-        if (root.outgoing) {
-            var childLength = root.outgoing.length;
-            for (var i = 0; i < childLength; i++) {
-                thisRef.updateNodesMap(graphJson, root.outgoing[i], 1, nodeId);
-            }
-        }
-        if (typeof parentNodeId !== "undefined") {
-            var key = "";
-            if (direction !== -1) {
-                key = parentNodeId + "_" + nodeId;
-                if (!thisRef.linksMap[key]) {
-                    thisRef.linksMap[key] = {source: parentNodeId, target: nodeId};
-                }
-            } else {
-                key = nodeId + "_" + parentNodeId;
-                if (!thisRef.linksMap[key]) {
-                    thisRef.linksMap[key] = {source: nodeId, target: parentNodeId};
-                }
-            }
-        } else {
-            thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
-            return {
-                nodes: thisRef.nodes,
-                links: thisRef.links
-            };
-        }
-    };
-    var getMaxNodesPossibleInColumn = function () {
-        //how many nodes required to occupy viewable area.
-        return height / minSpacing;
+    thisRef.getHeightUsedOfSvg = function () {
+        return heightUsedOfSvg;
     };
 
-    thisRef.getHeightUsedOfSvg = function(){
-        return heightUsedOfSvg;
+    thisRef.getGraphObj = function (graphJson, nodeId) {
+        updateNodesAndLinksMaps(graphJson, nodeId);
+        thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
+        return {
+            nodes: thisRef.nodes,
+            links: thisRef.links
+        };
+    };
+
+    thisRef.updateNodesAndLinksArr = function (tMinSpacing, tMaxColumns) {
+        heightUsedOfSvg = 0;
+        minSpacing = tMinSpacing;
+        maxColumns = tMaxColumns;
+        updateLinksArr();
+        updateNodesArrAndCoordinates();
+    };
+
+    var updateNodesAndLinksMaps = function (graphJson, nodeId, direction, parentNodeId) {
+        var nodeObj = updateNodesInfo(graphJson, nodeId);
+
+        updateNodesMapForNeighbours(graphJson, nodeObj.incoming, -1, nodeId);
+        updateNodesMapForNeighbours(graphJson, nodeObj.outgoing, 1, nodeId);
+
+        updateLinksInfo(parentNodeId, nodeId, direction);
+    };
+
+    var updateNodesInfo = function (graphJson, nodeId) {
+        var nodeObj = graphJson[nodeId];
+        if (typeof thisRef.nodesMap[nodeId] === "undefined") {
+            thisRef.nodesMap[nodeId] = {
+                name: nodeObj.name,
+                id: nodeId,
+                level: nodeObj.depth,
+                isNew: true
+            };
+            //Update node count in panes.
+            if (typeof thisRef.paneNodesCount[nodeObj.depth] === "undefined") {
+                thisRef.paneNodesCount[nodeObj.depth] = [];
+            }
+            thisRef.paneNodesCount[nodeObj.depth].push(nodeId);
+        }
+        return nodeObj;
+    };
+
+    var updateNodesMapForNeighbours = function (graphJson, nodeList, direction, nodeId) {
+        if (nodeList) {
+            var childLength = nodeList.length;
+            for (var i = 0; i < childLength; i++) {
+                updateNodesAndLinksMaps(graphJson, nodeList[i], direction, nodeId);
+            }
+        }
+    };
+
+    var updateLinksInfo = function (parentNodeId, childNodeId, direction) {
+        if (typeof parentNodeId !== "undefined") {
+            if (direction !== -1) {
+                addLinkToMap(parentNodeId, childNodeId);
+            } else {
+                addLinkToMap(childNodeId, parentNodeId);
+            }
+        }
+    };
+
+    var addLinkToMap = function (sourceId, targetId) {
+        var key = sourceId + "_" + targetId;
+        if (!thisRef.linksMap[key]) {
+            thisRef.linksMap[key] = {source: sourceId, target: targetId};
+        }
+    };
+
+    var updateLinksArr = function () {
+        var linksKeyArr = Object.keys(thisRef.linksMap);
+        var linksCount = linksKeyArr.length;
+        for (var index = thisRef.links.length; index < linksCount; index++) {
+            var linkObj = thisRef.linksMap[linksKeyArr[index]];
+            thisRef.links[index] = {
+                source: thisRef.nodesMap[linkObj.source],
+                target: thisRef.nodesMap[linkObj.target]
+            };
+        }
+    };
+
+    var updateNodesArrAndCoordinates = function () {
+        var maxNodesPossibleInColumn = getMaxNodesPossibleInColumn();
+        var paneWidth = width / paneCount;
+        var paneHeight = height;
+        for (var paneIndex = 0; paneIndex < paneCount; paneIndex++) {
+            if (thisRef.paneNodesCount[paneIndex]) {
+                var childrenInCurrentPane = thisRef.paneNodesCount[paneIndex].length;
+                if (childrenInCurrentPane > maxNodesPossibleInColumn) {
+                    //Balance zig zag logic
+                    var numberOfColsRequired = parseInt(childrenInCurrentPane / maxNodesPossibleInColumn);
+                    if (numberOfColsRequired >= maxColumns) {
+                        numberOfColsRequired = maxColumns;
+                    } else if (childrenInCurrentPane > maxNodesPossibleInColumn * numberOfColsRequired) {
+                        numberOfColsRequired++;
+                    }
+                    var numberOfNodesRenderPerColumn = parseInt(childrenInCurrentPane / numberOfColsRequired);
+                    if (childrenInCurrentPane > numberOfNodesRenderPerColumn * numberOfColsRequired) {
+                        numberOfNodesRenderPerColumn++;
+                    }
+                    if (numberOfNodesRenderPerColumn > maxNodesPossibleInColumn) {
+                        //draw according to the logic distance + radius from top;
+                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, true);
+                    } else {
+                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn);
+                    }
+                } else {
+                    updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex);
+                }
+            }
+        }
     };
 
     var updateNodesPositionVerticalPanesWise = function (paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, isNodeCountExceeded) {
@@ -108,53 +171,14 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                     delete nodeObj.isNew;
                 }
             }
-            if(nodeObj.y > heightUsedOfSvg){
+            if (nodeObj.y > heightUsedOfSvg) {
                 heightUsedOfSvg = nodeObj.y;
             }
         }
     };
 
-    thisRef.updateNodesAndLinksArr = function (tMinSpacing, tMaxColumns) {
-        heightUsedOfSvg = 0;
-        minSpacing = tMinSpacing;
-        maxColumns = tMaxColumns;
-        var maxNodesPossibleInColumn = getMaxNodesPossibleInColumn();
-        var paneWidth = width / paneCount;
-        var paneHeight = height;
-        for (var paneIndex = 0; paneIndex < paneCount; paneIndex++) {
-            if (thisRef.paneNodesCount[paneIndex]) {
-                var childrenInCurrentPane = thisRef.paneNodesCount[paneIndex].length;
-                if (childrenInCurrentPane > maxNodesPossibleInColumn) {
-                    //Balance zig zag logic
-                    var numberOfColsRequired = parseInt(childrenInCurrentPane / maxNodesPossibleInColumn);
-                    if (numberOfColsRequired >= maxColumns) {
-                        numberOfColsRequired = maxColumns;
-                    } else if (childrenInCurrentPane > maxNodesPossibleInColumn * numberOfColsRequired) {
-                        numberOfColsRequired++;
-                    }
-                    var numberOfNodesRenderPerColumn = parseInt(childrenInCurrentPane / numberOfColsRequired);
-                    if (childrenInCurrentPane > numberOfNodesRenderPerColumn * numberOfColsRequired) {
-                        numberOfNodesRenderPerColumn++;
-                    }
-                    if (numberOfNodesRenderPerColumn > maxNodesPossibleInColumn) {
-                        //draw according to the logic distance + radius from top;
-                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, true);
-                    } else {
-                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn);
-                    }
-                } else {
-                    updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex);
-                }
-            }
-        }
-        var linksKeyArr = Object.keys(thisRef.linksMap);
-        var linksCount = linksKeyArr.length;
-        for (paneIndex = thisRef.links.length; paneIndex < linksCount; paneIndex++) {
-            var linkObj = thisRef.linksMap[linksKeyArr[paneIndex]];
-            thisRef.links[paneIndex] = {
-                source: thisRef.nodesMap[linkObj.source],
-                target: thisRef.nodesMap[linkObj.target]
-            };
-        }
+    var getMaxNodesPossibleInColumn = function () {
+        //how many nodes required to occupy viewable area.
+        return height / minSpacing;
     };
 }
