@@ -10,7 +10,6 @@ function Layout() {
     var nodes = null;
     //Providing support for dynamic generation of colors.
     var color = d3.scale.category20();
-    var highlightConnectedNodes = null;
     var isNodeHighlighted = false;
     var svgParent = null;
     var edgeType = "STRAIGHT";
@@ -19,6 +18,7 @@ function Layout() {
     var containerId = "";
     var zoom = null;
     var selectedNodes = [];
+    var mainSvg = null;
 
     thisRef.init = function (tContainerId, tGraph, tWidth, tHeight, tNodeRadius) {
         containerId = tContainerId;
@@ -42,6 +42,8 @@ function Layout() {
 
     thisRef.update = function () {
         updateLayout();
+        nodes.exit().transition().remove();
+        links.exit().transition().remove();
     };
 
     var startLayoutCreation = function () {
@@ -52,7 +54,7 @@ function Layout() {
     var updateLayout = function () {
         drawEdge();
         drawNode();
-        highlightConnectedNodes = enableHighlighting();
+        updateNeighborInfo();
         //enableDragging();
         enableSelection();
     };
@@ -71,12 +73,12 @@ function Layout() {
             .on("zoom", zoomed);
 
         function zoomed() {
-            svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            mainSvg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
         }
 
         $("#ResetButton").on("click", reset);
         function reset() {
-            svg.attr("transform", "translate(0,0)scale(1)");
+            mainSvg.attr("transform", "translate(0,0)scale(1)");
             zoom.translate([0, 0]).scale(1);
         }
     };
@@ -89,6 +91,9 @@ function Layout() {
             .attr('height', height)
             .append("g")
             .call(zoom);
+
+        mainSvg = d3.select(".mainSVG")
+            .select("g");
 
         d3.select(".miniSVG")
             .select("g")
@@ -133,7 +138,9 @@ function Layout() {
         if (!links) {
             links = svg.append("g").selectAll("path");
         }
-        links = links.data(graph.links);
+        links = links.data(graph.links, function (d) {
+            return d.source.id + "_" + d.target.id;
+        });
         //Describing properties of the edges.
         links.enter().append("path")
             .attr("class", "link")
@@ -169,7 +176,9 @@ function Layout() {
         if (!nodes) {
             nodes = svg.selectAll('.node');
         }
-        nodes = nodes.data(graph.nodes);
+        nodes = nodes.data(graph.nodes, function (d) {
+            return d.id;
+        });
         //Describing properties of the nodes.
         var newNodes = nodes.enter()
             .append("g")
@@ -232,48 +241,98 @@ function Layout() {
             .on('click', highlightConnectedNodes);
     };
 
-    var enableHighlighting = function () {
-        //Toggle stores whether the highlighting is on
-        var toggle = 0;
-        //Create an array logging what is connected to what
-        var linkedByIndex = {};
-        for (var i = 0; i < graph.nodes.length; i++) {
-            linkedByIndex[i + "," + i] = 1;
+    var linkedByIndex = {};
+    var nodeLinkedInfo = {};
+    //This function looks up whether a pair are neighbours
+    var neighboring = function (a, b) {
+        if (a.id === b.id) {
+            return 1;
         }
-        graph.links.forEach(function (d) {
-            linkedByIndex[d.source.index + "," + d.target.index] = 1;
-        });
-        //thisRef function looks up whether a pair are neighbours
-        function neighboring(a, b) {
-            return linkedByIndex[a.index + "," + b.index];
-        }
+        return linkedByIndex[a.id + "," + b.id];
+    };
 
-        function connectedNodes(nodeObj) {
-            if (toggle == 0) {
-                //Reduce the opacity of all but the neighbouring nodes
-                d = d3.select(this).node().__data__;
-                if (!d) {
-                    d = nodeObj;
-                }
-                nodes.style("opacity", function (o) {
-                    return neighboring(d, o) | neighboring(o, d) ? 1 : 0.2;
-                });
-                links.style("opacity", function (o) {
-                    return d.index == o.source.index | d.index == o.target.index ? 1 : 0.01;
-                });
-                //Reduce the op
-                toggle = 1;
-                isNodeHighlighted = true;
-            } else {
-                //Put them back to opacity=1
-                nodes.style("opacity", 1);
-                links.style("opacity", 1);
-                toggle = 0;
-                isNodeHighlighted = false;
+    var updateNeighborInfo = function () {
+        function initNodeObjLinkedInfo(nodeId) {
+            if (!nodeLinkedInfo[nodeId]) {
+                nodeLinkedInfo[nodeId] = {
+                    incoming: [],
+                    outgoing: []
+                };
             }
         }
 
-        return connectedNodes;
+        //Create an array logging what is connected to what
+        linkedByIndex = {};
+        nodeLinkedInfo = {};
+        graph.links.forEach(function (d) {
+            linkedByIndex[d.source.id + "," + d.target.id] = 1;
+            initNodeObjLinkedInfo(d.source.id);
+            initNodeObjLinkedInfo(d.target.id);
+            nodeLinkedInfo[d.source.id].outgoing[d.target.id] = 1;
+            nodeLinkedInfo[d.target.id].incoming[d.source.id] = 1;
+        });
+    };
+
+    var highlightConnectedNodes = function (nodeObj) {
+        if (!isNodeHighlighted) {
+            //Reduce the opacity of all but the neighbouring nodes
+            nodes.style("opacity", function (d) {
+                return neighboring(nodeObj, d) | neighboring(d, nodeObj) ? 1 : 0.2;
+            });
+            links.style("opacity", function (d) {
+                return nodeObj.id == d.source.id | nodeObj.id == d.target.id ? 1 : 0.01;
+            });
+            isNodeHighlighted = true;
+        } else {
+            //Put them back to opacity=1
+            nodes.style("opacity", 1);
+            links.style("opacity", 1);
+            isNodeHighlighted = false;
+        }
+    };
+
+    var deleteParent = function (nodeId) {
+        var nodesToDelete = [];
+        var linksToDelete = [];
+        recursivelyDelete(nodeId);
+        function recursivelyDelete(nodeId) {
+            var nodeObj = nodeLinkedInfo[nodeId];
+            for (var childId in nodeObj.incoming) {
+                linksToDelete.push(childId + "_" + nodeId);
+                delete nodeObj.incoming[childId];
+                var childObj = nodeLinkedInfo[childId];
+                delete childObj.outgoing[nodeId];
+                if (Object.keys(childObj.outgoing).length === 0) {
+                    nodesToDelete.push(childId);
+                    recursivelyDelete(childId);
+                }
+            }
+        }
+
+        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodesToDelete, linksToDelete);
+        thisRef.update();
+    };
+
+    var deleteChildren = function (nodeId) {
+        var nodesToDelete = [];
+        var linksToDelete = [];
+        recursivelyDelete(nodeId);
+        function recursivelyDelete(nodeId) {
+            var nodeObj = nodeLinkedInfo[nodeId];
+            for (var childId in nodeObj.outgoing) {
+                linksToDelete.push(nodeId + "_" + childId);
+                delete nodeObj.outgoing[childId];
+                var childObj = nodeLinkedInfo[childId];
+                delete childObj.incoming[nodeId];
+                if (Object.keys(childObj.incoming).length === 0) {
+                    nodesToDelete.push(childId);
+                    recursivelyDelete(childId);
+                }
+            }
+        }
+
+        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodesToDelete, linksToDelete);
+        thisRef.update();
     };
 
     var enableDragging = function () {
@@ -384,10 +443,25 @@ function Layout() {
                 }
             }
         }
+        actionItems.collapseChilds = {
+            name: "Collapse Children...",
+            callback: function () {
+                deleteChildren(nodeObj.name);
+            }
+        };
+        actionItems.collapseParents = {
+            name: "Collapse Parents...",
+            callback: function () {
+                deleteParent(nodeObj.name);
+            }
+        };
+        var selectedNodeIds = Object.keys(selectedNodes);
+        if (selectedNodeIds.length > 1) {
+            actionItems = [];
+        }
         actionItems.createCab = {
             name: "Generate CAB...",
             callback: function () {
-                var selectedNodeIds = Object.keys(selectedNodes);
                 if (selectedNodeIds.length === 0) {
                     alert(nodeObj.name);
                 } else {

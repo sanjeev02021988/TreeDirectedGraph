@@ -23,6 +23,37 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         };
     };
 
+    thisRef.deleteNodesAndLinksFromGraphObj = function (nodesToDelete, linksToDelete) {
+        var nodeIdArrayFromNodes = thisRef.nodes.map(function (node) {
+            return node.id;
+        });
+        for (var index = 0; index < nodesToDelete.length; index++) {
+            var level = thisRef.nodesMap[nodesToDelete[index]].level;
+            delete thisRef.nodesMap[nodesToDelete[index]];
+            var indexInPaneNodesCount = thisRef.paneNodesCount[level].indexOf(nodesToDelete[index]);
+            if (indexInPaneNodesCount !== -1) {
+                thisRef.paneNodesCount[level].splice(indexInPaneNodesCount, 1);
+            }
+            var indexInNodeIdArrayFromNodes = nodeIdArrayFromNodes.indexOf(nodesToDelete[index]);
+            if (indexInNodeIdArrayFromNodes !== -1) {
+                thisRef.nodes.splice(indexInNodeIdArrayFromNodes, 1);
+                nodeIdArrayFromNodes.splice(indexInNodeIdArrayFromNodes, 1);
+            }
+        }
+        var linkIdArrayFromNodes = thisRef.links.map(function (link) {
+            return link.source.id + "_" + link.target.id;
+        });
+        for (index = 0; index < linksToDelete.length; index++) {
+            delete thisRef.linksMap[linksToDelete[index]];
+            var indexInLinkIdArrayFromNodes = linkIdArrayFromNodes.indexOf(linksToDelete[index]);
+            if (indexInLinkIdArrayFromNodes !== -1) {
+                thisRef.links.splice(indexInLinkIdArrayFromNodes, 1);
+                linkIdArrayFromNodes.splice(indexInLinkIdArrayFromNodes, 1);
+            }
+        }
+        thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
+    };
+
     thisRef.updateNodesAndLinksArr = function (tMinSpacing, tMaxColumns) {
         heightUsedOfSvg = 0;
         minSpacing = tMinSpacing;
@@ -171,7 +202,7 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                     delete nodeObj.isNew;
                 }
             }
-            if (nodeObj.y > heightUsedOfSvg) {
+            if (nodeObj && nodeObj.y > heightUsedOfSvg) {
                 heightUsedOfSvg = nodeObj.y;
             }
         }
