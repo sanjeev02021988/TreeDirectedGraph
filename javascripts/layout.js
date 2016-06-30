@@ -457,7 +457,7 @@ function Layout() {
         };
         var selectedNodeIds = Object.keys(selectedNodes);
         if (selectedNodeIds.length > 1) {
-            actionItems = [];
+            actionItems = {};
         }
         actionItems.createCab = {
             name: "Generate CAB...",

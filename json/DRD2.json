@@ -1,0 +1,32 @@
+{
+    "DRD2": {
+        "name": "DRD2",
+        "depth": 2,
+        "incoming": ["DS1"],
+        "outgoing": ["Cube101", "Cube102", "Cube103", "Cube104", "Cube105"]
+    },
+    "DS1": {
+        "name": "DS1",
+        "depth": 1
+    },
+    "Cube101": {
+        "name": "Cube101",
+        "depth": 3
+    },
+    "Cube102": {
+        "name": "Cube102",
+        "depth": 3
+    },
+    "Cube103": {
+        "name": "Cube103",
+        "depth": 3
+    },
+    "Cube104": {
+        "name": "Cube104",
+        "depth": 3
+    },
+    "Cube105": {
+        "name": "Cube105",
+        "depth": 3
+    }
+}

@@ -9,7 +9,7 @@ var graphUtilityObj = new generateGraphData(visibleHeight - nodeRadius * 2, visi
 var layoutObj = new Layout();
 updateHeightOfContainerDiv(visibleHeight, visibleWidth);
 //Change graph to tree.json and rootNodeId to graphJson for complete tree layout.
-d3.json("./json/graph.json", function (error, graphJson) {
+d3.json("./json/"+rootNodeId+".json", function (error, graphJson) {
     for (var i = 7; i < 40; i++) {
         var id = "Cube" + i;
         graphJson[rootNodeId].outgoing.push(id);
