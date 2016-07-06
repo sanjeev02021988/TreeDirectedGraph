@@ -69,10 +69,9 @@ function Layout() {
     var enableZooming = function () {
         zoom = d3.behavior.zoom()
             .scaleExtent([0.1, 3])
-            //.translateExtent([[0, 0], [width, height]])
             .on("zoom", zoomed);
-
         function zoomed() {
+            svgParent.selectAll("rect.selection").remove();
             mainSvg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
         }
 
@@ -85,12 +84,11 @@ function Layout() {
 
     var appendSVG = function () {
         //Add svg to the body.
-        svgParent = d3.selectAll(".graphSVG");
+        svgParent = d3.selectAll(".graphSVG").call(zoom);
         svg = svgParent
             .attr('width', width)
             .attr('height', height)
-            .append("g")
-            .call(zoom);
+            .append("g");
 
         mainSvg = d3.select(".mainSVG")
             .select("g");
@@ -309,7 +307,7 @@ function Layout() {
             }
         }
 
-        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodesToDelete, linksToDelete);
+        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
     };
 
@@ -331,7 +329,7 @@ function Layout() {
             }
         }
 
-        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodesToDelete, linksToDelete);
+        graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
     };
 
@@ -413,18 +411,54 @@ function Layout() {
             });
     };
 
+    var updateGraph = function (graphJson, rootNode) {
+        var entityNamePrefix = ["RF", "DS", "DRD", "Cube", "WB", "DB"];
+        var childDepth = rootNode.level + 1;
+        var startIndex = 0;
+        if (graphUtilityObj.paneNodesCount[childDepth]) {
+            startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
+        }
+        for (var i = startIndex; i < startIndex + 10; i++) {
+            var id = entityNamePrefix[childDepth] + i;
+            graphJson[rootNode.id].outgoing.push(id);
+            graphJson[id] = {
+                "name": id,
+                "depth": childDepth
+            }
+        }
+        var parentDepth = rootNode.level - 1;
+        startIndex = 0;
+        if (graphUtilityObj.paneNodesCount[parentDepth]) {
+            startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
+        }
+        for (var i = startIndex; i < startIndex + 3; i++) {
+            var id = entityNamePrefix[parentDepth] + i;
+            graphJson[rootNode.id].incoming.push(id);
+            graphJson[id] = {
+                "name": id,
+                "depth": parentDepth
+            }
+        }
+        return graphJson;
+    };
+
     var showContextMenu = function (nodeObj) {
         $.contextMenu('destroy');
         var actionItems = {
             showInComingNodes: {
                 name: "Connected Nodes...",
                 callback: function () {
-                    d3.json("./json/" + nodeObj.name + ".json", function (error, graphJson) {
-                        if (!error) {
-                            graphUtilityObj.getGraphObj(graphJson, nodeObj.name);
-                            thisRef.update(nodeObj);
-                        }
-                    });
+                    var graphJson = {};
+                    graphJson[nodeObj.id] = {
+                        "name": nodeObj.name,
+                        "depth": nodeObj.level,
+                        "incoming": [],
+                        "outgoing": []
+                    };
+                    graphJson = updateGraph(graphJson, nodeObj);
+                    graphUtilityObj.getGraphObj(graphJson, nodeObj.name);
+                    thisRef.update(nodeObj);
+                    mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
                 }
             }
         };
@@ -446,13 +480,18 @@ function Layout() {
         actionItems.collapseChilds = {
             name: "Collapse Children...",
             callback: function () {
+                nodeObj.outgoing = [];
+                nodeObj.width = 25;
                 deleteChildren(nodeObj.name);
+                mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
             }
         };
         actionItems.collapseParents = {
             name: "Collapse Parents...",
             callback: function () {
+                nodeObj.incoming = [];
                 deleteParent(nodeObj.name);
+                mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
             }
         };
         var selectedNodeIds = Object.keys(selectedNodes);

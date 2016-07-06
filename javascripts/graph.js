@@ -4,13 +4,13 @@ var svgWidth = 1300,
     visibleHeight = 630,
     rootNodeId = "DRD1",
     nodeRadius = 10;
-var isScrollingEnabled = true;
+var isScrollingEnabled = false;
 var graphUtilityObj = new generateGraphData(visibleHeight - nodeRadius * 2, visibleWidth, 0, 0, 6);
 var layoutObj = new Layout();
 updateHeightOfContainerDiv(visibleHeight, visibleWidth);
 //Change graph to tree.json and rootNodeId to graphJson for complete tree layout.
-d3.json("./json/"+rootNodeId+".json", function (error, graphJson) {
-    for (var i = 7; i < 40; i++) {
+d3.json("./json/" + rootNodeId + ".json", function (error, graphJson) {
+    for (var i = 6; i < 20; i++) {
         var id = "Cube" + i;
         graphJson[rootNodeId].outgoing.push(id);
         graphJson[id] = {

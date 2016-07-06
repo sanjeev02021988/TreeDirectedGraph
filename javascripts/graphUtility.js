@@ -9,6 +9,9 @@ function generateGraphData(height, width, x0, y0, paneCount) {
     var maxColumns = 1;
     var minSpacing = 25;
 
+    thisRef.currentRootObjYPos = 0;
+    var currentRootObj = null;
+
     var heightUsedOfSvg = 0;
     thisRef.getHeightUsedOfSvg = function () {
         return heightUsedOfSvg;
@@ -16,6 +19,13 @@ function generateGraphData(height, width, x0, y0, paneCount) {
 
     thisRef.getGraphObj = function (graphJson, nodeId) {
         updateNodesAndLinksMaps(graphJson, nodeId);
+        updateWidthInNodesMap();
+        currentRootObj = thisRef.nodesMap[nodeId];
+        if (typeof currentRootObj.y === "undefined") {
+            thisRef.currentRootObjYPos = height / 2;
+        } else {
+            thisRef.currentRootObjYPos = currentRootObj.y;
+        }
         thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
         return {
             nodes: thisRef.nodes,
@@ -23,7 +33,47 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         };
     };
 
-    thisRef.deleteNodesAndLinksFromGraphObj = function (nodesToDelete, linksToDelete) {
+    thisRef.getRenderingCoordinates = function (svg) {
+        var nodeObj = thisRef.nodesMap[currentRootObj.id];
+        var translate = d3.transform(svg.attr("transform")).translate;
+        return [x0 + translate[0], y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
+    };
+
+    var updateWidthInNodesMap = function () {
+        var tempNodesMap = $.extend(true, {}, thisRef.nodesMap);
+        for (var paneIndex = 0; paneIndex < paneCount; paneIndex++) {
+            var currentPanesNodeList = thisRef.paneNodesCount[paneIndex];
+            if (currentPanesNodeList) {
+                for (var nodeIndex = 0; nodeIndex < currentPanesNodeList.length; nodeIndex++) {
+                    var nodeId = currentPanesNodeList[nodeIndex];
+                    var nodeObj = tempNodesMap[nodeId];
+                    if (!nodeObj.iterated) {
+                        updateWidthForOutgoingNodes(tempNodesMap, nodeObj);
+                    }
+                }
+            }
+        }
+    };
+
+    var updateWidthForOutgoingNodes = function (tempNodesMap, nodeObj) {
+        var nodeList = nodeObj.outgoing;
+        var width = 0;
+        for (var index = 0; index < nodeList.length; index++) {
+            var childObj = tempNodesMap[nodeList[index]];
+            if (nodeObj.level < childObj.level && !childObj.iterated) {
+                width += updateWidthForOutgoingNodes(tempNodesMap, childObj);
+            }
+        }
+        if (width == 0) {
+            width = minSpacing;
+        }
+        nodeObj.iterated = true;
+        nodeObj.width = width;
+        thisRef.nodesMap[nodeObj.id].width = nodeObj.width;
+        return nodeObj.width;
+    };
+
+    thisRef.deleteNodesAndLinksFromGraphObj = function (nodeId, nodesToDelete, linksToDelete) {
         var nodeIdArrayFromNodes = thisRef.nodes.map(function (node) {
             return node.id;
         });
@@ -50,6 +100,13 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                 thisRef.links.splice(indexInLinkIdArrayFromNodes, 1);
                 linkIdArrayFromNodes.splice(indexInLinkIdArrayFromNodes, 1);
             }
+        }
+        updateWidthInNodesMap();
+        currentRootObj = thisRef.nodesMap[nodeId];
+        if (typeof currentRootObj.y === "undefined") {
+            thisRef.currentRootObjYPos = height / 2;
+        } else {
+            thisRef.currentRootObjYPos = currentRootObj.y;
         }
         thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
     };
@@ -78,7 +135,9 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                 name: nodeObj.name,
                 id: nodeId,
                 level: nodeObj.depth,
-                isNew: true
+                isNew: true,
+                incoming: [],
+                outgoing: []
             };
             //Update node count in panes.
             if (typeof thisRef.paneNodesCount[nodeObj.depth] === "undefined") {
@@ -112,6 +171,8 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         var key = sourceId + "_" + targetId;
         if (!thisRef.linksMap[key]) {
             thisRef.linksMap[key] = {source: sourceId, target: targetId};
+            thisRef.nodesMap[sourceId].outgoing.push(targetId);
+            thisRef.nodesMap[targetId].incoming.push(sourceId);
         }
     };
 
@@ -127,89 +188,49 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         }
     };
 
+    var panesHeightOccupied = 0;
     var updateNodesArrAndCoordinates = function () {
-        var maxNodesPossibleInColumn = getMaxNodesPossibleInColumn();
+        panesHeightOccupied = 0;
         var paneWidth = width / paneCount;
-        var paneHeight = height;
+        var tempNodesMap = $.extend(true, {}, thisRef.nodesMap);
         for (var paneIndex = 0; paneIndex < paneCount; paneIndex++) {
-            if (thisRef.paneNodesCount[paneIndex]) {
-                var childrenInCurrentPane = thisRef.paneNodesCount[paneIndex].length;
-                if (childrenInCurrentPane > maxNodesPossibleInColumn) {
-                    //Balance zig zag logic
-                    var numberOfColsRequired = parseInt(childrenInCurrentPane / maxNodesPossibleInColumn);
-                    if (numberOfColsRequired >= maxColumns) {
-                        numberOfColsRequired = maxColumns;
-                    } else if (childrenInCurrentPane > maxNodesPossibleInColumn * numberOfColsRequired) {
-                        numberOfColsRequired++;
+            var currentPanesNodeList = thisRef.paneNodesCount[paneIndex];
+            if (currentPanesNodeList) {
+                for (var nodeIndex = 0; nodeIndex < currentPanesNodeList.length; nodeIndex++) {
+                    var nodeId = currentPanesNodeList[nodeIndex];
+                    var nodeObj = tempNodesMap[nodeId];
+                    if (!nodeObj.iterated) {
+                        nodeObj.x = x0 + (2 * nodeObj.level + 1) * paneWidth / 2;
+                        nodeObj.y = panesHeightOccupied + nodeObj.width / 2;
+                        updateCoordinatesForOutgoingNodes(tempNodesMap, nodeObj, paneWidth, panesHeightOccupied);
+                        panesHeightOccupied += nodeObj.width;
                     }
-                    var numberOfNodesRenderPerColumn = parseInt(childrenInCurrentPane / numberOfColsRequired);
-                    if (childrenInCurrentPane > numberOfNodesRenderPerColumn * numberOfColsRequired) {
-                        numberOfNodesRenderPerColumn++;
+                    var originalNodeObj = thisRef.nodesMap[nodeObj.id];
+                    originalNodeObj.x = nodeObj.x;
+                    originalNodeObj.y = nodeObj.y;
+                    if (originalNodeObj.isNew) {
+                        thisRef.nodes.push(originalNodeObj);
+                        delete originalNodeObj.isNew;
                     }
-                    if (numberOfNodesRenderPerColumn > maxNodesPossibleInColumn) {
-                        //draw according to the logic distance + radius from top;
-                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, true);
-                    } else {
-                        updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn);
-                    }
-                } else {
-                    updateNodesPositionVerticalPanesWise(paneWidth, paneHeight, childrenInCurrentPane, paneIndex);
                 }
             }
         }
     };
 
-    var updateNodesPositionVerticalPanesWise = function (paneWidth, paneHeight, childrenInCurrentPane, paneIndex, numberOfColsRequired, numberOfNodesRenderPerColumn, isNodeCountExceeded) {
-        var isOddColsReq = true;
-        if (!numberOfColsRequired) {
-            numberOfColsRequired = 1;
-            numberOfNodesRenderPerColumn = childrenInCurrentPane;
-        }
-        isOddColsReq = numberOfColsRequired % 2;
-        for (var colIndex = 0; colIndex < numberOfColsRequired; colIndex++) {
-            var numberOfNodesRenderInCurrentColumn = numberOfNodesRenderPerColumn;
-            if (colIndex === numberOfColsRequired - 1) {
-                numberOfNodesRenderInCurrentColumn = childrenInCurrentPane - colIndex * numberOfNodesRenderPerColumn;
-            }
-            if (!isNodeCountExceeded) {
-                var subPaneHeight = paneHeight / numberOfNodesRenderInCurrentColumn;
-            }
-            var x_currentPaneCenter = x0 + (2 * paneIndex + 1) * paneWidth / 2;
-            if (isOddColsReq) {
-                x_currentPaneCenter += (colIndex - parseInt(numberOfColsRequired / 2)) * minSpacing;
-            } else {
-                if (colIndex < numberOfColsRequired / 2) {
-                    x_currentPaneCenter -= ((numberOfColsRequired - 1 - 2 * colIndex) * minSpacing) / 2;
-                } else {
-                    x_currentPaneCenter += ((2 * colIndex + 1 - numberOfColsRequired) * minSpacing) / 2;
+    var updateCoordinatesForOutgoingNodes = function (tempNodesMap, nodeObj, paneWidth, y0) {
+        var nodeList = nodeObj.outgoing;
+        if (nodeList.length !== 0) {
+            var tempY = y0;
+            for (var index = 0; index < nodeList.length; index++) {
+                var childObj = tempNodesMap[nodeList[index]];
+                if (nodeObj.level < childObj.level && !childObj.iterated) {
+                    childObj.x = x0 + (2 * childObj.level + 1) * paneWidth / 2;
+                    childObj.y = tempY + childObj.width / 2;
+                    updateCoordinatesForOutgoingNodes(tempNodesMap, childObj, paneWidth, tempY);
+                    tempY += childObj.width;
                 }
-            }
-            var nodeObj = null;
-            for (var k = 0; k < numberOfNodesRenderInCurrentColumn; k++) {
-                var childKey = thisRef.paneNodesCount[paneIndex][colIndex * numberOfNodesRenderPerColumn + k];
-                nodeObj = thisRef.nodesMap[childKey];
-                nodeObj.x = x_currentPaneCenter;
-                if (isNodeCountExceeded) {
-                    nodeObj.y = y0 + (2 * k + 1) * (minSpacing) / 2;
-                } else {
-                    nodeObj.y = y0 + (2 * k + 1) * subPaneHeight / 2;
-                }
-                if (colIndex % 2) {
-                    nodeObj.y += minSpacing / 2;
-                }
-                if (nodeObj.isNew) {
-                    thisRef.nodes.push(nodeObj);
-                    delete nodeObj.isNew;
-                }
-            }
-            if (nodeObj && nodeObj.y > heightUsedOfSvg) {
-                heightUsedOfSvg = nodeObj.y;
             }
         }
-    };
-
-    var getMaxNodesPossibleInColumn = function () {
-        //how many nodes required to occupy viewable area.
-        return height / minSpacing;
+        nodeObj.iterated = true;
     };
 }
