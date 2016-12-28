@@ -2,8 +2,12 @@
     "DRD1": {
         "name": "DRD1",
         "depth": 2,
-        "incoming": ["DS1", "DS2"],
+        "incoming": ["DS1", "DS2","DRD2"],
         "outgoing": ["Cube1", "Cube2", "Cube3", "Cube4", "Cube5"]
+    },
+    "DRD2": {
+        "name": "DRD2",
+        "depth": 2
     },
     "DS1": {
         "name": "DS1",

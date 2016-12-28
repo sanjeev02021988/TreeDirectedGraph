@@ -14,8 +14,18 @@
         <div id="miniSvgContainer" style="overflow:hidden;">
             <svg class="graphSVG miniSVG"></svg>
         </div>
+        <div class="enable_selection">
+            <label>
+                <input type="checkbox" name="disablePanning"/><span>Enable Selection</span>
+            </label>
+        </div>
+        <div class="zoom-button">
+            <div class="zoom-in">+</div>
+            <hr>
+            <div class="zoom-out">-</div>
+        </div>
         <button id="ResetButton">RESET</button>
-        <button id="ConfigButton">CONFIG</button>
+        <button id="ConfigButton" class="primary">CONFIG</button>
         <div id="ConfigDialog" class="dialog">
             <div class="dialog-container">
                 <div>
@@ -26,12 +36,6 @@
                         <label for="minSpace" class="col-sm-4 form-control-label">Minimum Spacing</label>
                         <div class="col-sm-4">
                             <input type="text" class="form-control" id="minSpace" value="25" placeholder="Spacing">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="colCount" class="col-sm-4 form-control-label">Max. Columns</label>
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" id="colCount" value="1" placeholder="Columns">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -76,19 +80,9 @@
                             </label>
                         </div>
                     </div>
-                    <div class="form-group row">
-                        <label class="col-sm-4"></label>
-                        <div class="col-sm-8">
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" name="enableScroll"> Enabling Scrolling.
-                                </label>
-                            </div>
-                        </div>
-                    </div>
                 </form>
                 <button id="cancelButton">CANCEL</button>
-                <button id="applyButton">APPLY</button>
+                <button id="applyButton" class="primary">APPLY</button>
             </div>
         </div>
         <div class="overlay-win"></div>

@@ -1,31 +1,39 @@
 function Layout() {
     var thisRef = this;
+
+    var containerId = "";
     var graph = null;
     var width = 0;
     var height = 0;
-    var svg = null;
-    var tip = null;
-    var nodeRadius = 20;
-    var links = null;
-    var nodes = null;
-    //Providing support for dynamic generation of colors.
-    var color = d3.scale.category20();
-    var isNodeHighlighted = false;
-    var svgParent = null;
+    var nodeRadius = 10;
     var edgeType = "STRAIGHT";
     var edgeColor = "#999999";
     var labelDirection = "RIGHT";
-    var containerId = "";
-    var zoom = null;
+
+    var links = null;
+    var nodes = null;
     var selectedNodes = [];
+    var isNodeHighlighted = false;
+
+    var svg = null;
+    var svgParent = null;
     var mainSvg = null;
 
-    thisRef.init = function (tContainerId, tGraph, tWidth, tHeight, tNodeRadius) {
+    //Providing support for dynamic generation of colors.
+    var color = d3.scale.category20();
+    var tip = null;
+    var zoom = null;
+    var zoomSmallMap = null;
+
+    thisRef.init = function (tContainerId, tGraph, tWidth, tHeight, tNodeRadius, tEdgeType, tEdgeColor, tLabelDirection) {
         containerId = tContainerId;
         graph = tGraph;
         width = tWidth;
         height = tHeight;
         nodeRadius = tNodeRadius;
+        edgeType = tEdgeType;
+        edgeColor = tEdgeColor;
+        labelDirection = tLabelDirection;
         startLayoutCreation();
     };
 
@@ -44,6 +52,9 @@ function Layout() {
         updateLayout();
         nodes.exit().transition().remove();
         links.exit().transition().remove();
+        var initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
+        mainSvg.attr("transform", "translate(" + initialCoordinates + ")");
+        addRectToSmallMap();
     };
 
     var startLayoutCreation = function () {
@@ -55,8 +66,10 @@ function Layout() {
         drawEdge();
         drawNode();
         updateNeighborInfo();
-        //enableDragging();
         enableSelection();
+        d3.select(".miniSVG")
+            .select("g")
+            .attr("transform", "scale(" + graphUtilityObj.scalingOfSmallMap() + ")");
     };
 
     var initializeLayout = function () {
@@ -66,19 +79,70 @@ function Layout() {
         enableToolTip();
     };
 
+    var zoomIncrementFactor = 0;
+    this.zoomInOut  = function(incrementFactor) {
+        zoomIncrementFactor += incrementFactor;
+        svgParent.selectAll("rect.selection").remove();
+        var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+        var newScalingArr = mainSvgTransformObj.scale[0] + incrementFactor;
+        mainSvg.attr("transform", "translate(" + mainSvgTransformObj.translate + ")scale(" + newScalingArr + ")");
+        addRectToSmallMap(mainSvgTransformObj.translate, newScalingArr);
+    };
+
+    var selectionEnabled = false;
+    var translateVector = [0,0];
+    this.enableSelection = function(enableSelection){
+        selectionEnabled = enableSelection;
+        if(selectionEnabled){
+            zoom.on("zoom.mousemove",null);
+        }
+    };
+
     var enableZooming = function () {
         zoom = d3.behavior.zoom()
             .scaleExtent([0.1, 3])
             .on("zoom", zoomed);
-        function zoomed() {
+
+        function zoomed(events) {
+            if(selectionEnabled){
+                var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+                translateVector = [mainSvgTransformObj.translate[0] - d3.event.translate[0],mainSvgTransformObj.translate[1] - d3.event.translate[1]];
+
+                /*var coordinates = [0, 0];
+                 coordinates = d3.mouse(this);
+                 var x = coordinates[0];
+                 var y = coordinates[1];
+                var scaling = d3.event.scale + zoomIncrementFactor;
+                mainSvg.attr("transform", "translate(" + mainSvgTransformObj.translate + ")scale(" + scaling + ")");*/
+                return;
+            }
+            var newTranslatePos = [d3.event.translate[0] + translateVector[0], d3.event.translate[1] + translateVector[1]];
             svgParent.selectAll("rect.selection").remove();
-            mainSvg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            var scaling = d3.event.scale + zoomIncrementFactor;
+            mainSvg.attr("transform", "translate(" + newTranslatePos + ")scale(" + scaling + ")");
+            addRectToSmallMap(newTranslatePos, d3.event.scale + zoomIncrementFactor);
         }
 
         $("#ResetButton").on("click", reset);
         function reset() {
             mainSvg.attr("transform", "translate(0,0)scale(1)");
             zoom.translate([0, 0]).scale(1);
+            addRectToSmallMap([0,0],1);
+        }
+        enableZoomingSmallMap();
+    };
+
+    var enableZoomingSmallMap = function () {
+        zoomSmallMap = d3.behavior.zoom()
+            .scaleExtent([0.1, 3])
+            .on("zoom", zoomed);
+        function zoomed() {
+            d3.select(".miniSVG").select("rect")
+                .attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+            var scalingFactor = d3.event.scale/graphUtilityObj.scalingOfSmallMap();
+            var x = d3.event.translate[0] * scalingFactor,
+                y = d3.event.translate[1] * scalingFactor;
+            mainSvg.attr("transform", "translate(" + [x,y] + ")scale(" + scalingFactor + ")");
         }
     };
 
@@ -92,10 +156,31 @@ function Layout() {
 
         mainSvg = d3.select(".mainSVG")
             .select("g");
+        addRectToSmallMap([0,0]);
+    };
 
-        d3.select(".miniSVG")
-            .select("g")
-            .attr("transform", "scale(" + 0.2 + ")");
+    var addRectToSmallMap = function(initialCoordinates, scalling){
+        if(!initialCoordinates){
+            initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
+        }
+        if(!scalling){
+            scalling = 1;
+        }
+        var scalingFactor = graphUtilityObj.scalingOfSmallMap()/scalling;
+        var rect = d3.select(".miniSVG").select("rect");
+        if(!rect[0][0]){
+            rect = d3.select(".miniSVG").append("rect");
+        }
+        rect.attr({
+                rx: 2,
+                ry: 2,
+                class: "smallMapSelection",
+                x: -1 * initialCoordinates[0] * scalingFactor + 1,
+                y: -1 * initialCoordinates[1] * scalingFactor + 1,
+                width: visibleWidth * scalingFactor - 4,
+                height: visibleHeight * scalingFactor - 2
+            });
+        //rect.call(zoomSmallMap);
     };
 
     var enableArrowHeads = function () {
@@ -104,6 +189,7 @@ function Layout() {
             .data(["end"])               // Different link/path types can be defined here
             .enter().append("marker")    // This section adds in the arrows
             .attr("id", function (d) {
+                console.log(d);
                 return d;
             })
             .attr("viewBox", "0 -5 10 10")
@@ -111,7 +197,7 @@ function Layout() {
                 return 10 + 11 * nodeRadius / 10;
             })
             .attr("refY", function () {
-                return (edgeType === "CURVE") ? -2 : 0;
+                return (edgeType === "CURVE") ? -0.5 : 0;
             })
             .attr("markerWidth", 6)
             .attr("markerHeight", 6)
@@ -142,8 +228,7 @@ function Layout() {
         //Describing properties of the edges.
         links.enter().append("path")
             .attr("class", "link")
-            .attr("marker-end", "url(#end)")
-            .style("stroke", edgeColor);
+            .attr("marker-end", "url(#end)");
         renderEdge();
     };
 
@@ -156,17 +241,26 @@ function Layout() {
         }
         tempLinkObj.attr("d", function (d) {
             var dx = d.target.x - d.source.x,
-                dy = d.target.y - d.source.y,
-                dr = 0;
-            if (edgeType === "CURVE") {
-                dr = Math.sqrt(dx * dx + dy * dy);
+                dy = d.target.y - d.source.y;
+            var point = 0;
+            if(dx === 0){
+                point = d.source.x - 90;
+            }else{
+                point = d.source.x + 90;
             }
             return "M" +
                 d.source.x + "," +
-                d.source.y + "A" +
-                dr + "," + dr + " 0 0,1 " +
+                d.source.y + "C"+point+"," +
+                d.source.y + " "+point+"," +
+                d.target.y + " " +
                 d.target.x + "," +
                 d.target.y;
+        }).style("stroke",function(d){
+            var dx = d.target.x - d.source.x;
+            if(dx === 0){
+                return edgeColor;//"red"
+            }
+            return edgeColor;
         });
     };
 
@@ -194,7 +288,7 @@ function Layout() {
         attachEventsToNode();
     };
 
-    var renderNode = function (parentNode, newNodes) {
+    var renderNode = function () {
         nodes.transition().ease("linear")
             .duration(600).attr("transform", function (d) {
                 var x = d.x;
@@ -230,7 +324,7 @@ function Layout() {
 
     var attachEventsToNode = function () {
         //Adding events to the node.
-        nodes.on('contextmenu', function (d, i) {
+        nodes.on('contextmenu', function (d) {
             d3.event.preventDefault();
             showContextMenu(d);
         })
@@ -278,7 +372,7 @@ function Layout() {
                 return neighboring(nodeObj, d) | neighboring(d, nodeObj) ? 1 : 0.2;
             });
             links.style("opacity", function (d) {
-                return nodeObj.id == d.source.id | nodeObj.id == d.target.id ? 1 : 0.01;
+                return nodeObj.id === d.source.id | nodeObj.id === d.target.id ? 1 : 0.01;
             });
             isNodeHighlighted = true;
         } else {
@@ -333,19 +427,6 @@ function Layout() {
         thisRef.update();
     };
 
-    var enableDragging = function () {
-        var drag = d3.behavior.drag()
-            .on("drag", function (d, i) {
-                d.x += d3.event.dx;
-                d.y += d3.event.dy;
-                d3.select(this).attr("transform", function (d, i) {
-                    return "translate(" + [ d.x, d.y ] + ")"
-                });
-                renderEdge(true);
-            });
-        nodes.call(drag);
-    };
-
     var enableSelection = function () {
         svgParent.on("mousedown", function () {
             if (d3.event.button === 0) {
@@ -362,7 +443,7 @@ function Layout() {
                     y: p[1],
                     width: 0,
                     height: 0
-                })
+                });
         })
             .on("mousemove", function () {
                 var s = svgParent.select("rect.selection");
@@ -391,10 +472,17 @@ function Layout() {
                         d.height = move.y;
                     }
                     s.attr(d);
-                    d3.selectAll('g.node > circle').each(function (node_data, i) {
+                    d3.selectAll('g.node > circle').each(function (node_data) {
                         if (!d3.select(this).classed("selected")) {
-                            //Inner circle inside selection frame
-                            if (node_data.x - nodeRadius >= d.x && node_data.x + nodeRadius <= d.x + d.width && node_data.y - nodeRadius >= d.y && node_data.y + nodeRadius <= d.y + d.height) {
+                            var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+                            var mainSvgTranslateObj = mainSvgTransformObj.translate;
+                            var scaling = mainSvgTransformObj.scale[0];
+                            var nodeDataX = node_data.x + mainSvgTranslateObj[0]/scaling;
+                            var nodeDataY = node_data.y + mainSvgTranslateObj[1]/scaling;
+                            if (scaling*(nodeDataX - nodeRadius) >= d.x &&
+                                scaling*(nodeDataX + nodeRadius) <= d.x + d.width &&
+                                scaling*(nodeDataY - nodeRadius) >= d.y &&
+                                scaling*(nodeDataY + nodeRadius) <= d.y + d.height) {
                                 d3.select(this.parentNode).classed("selected", true);
                                 selectedNodes[node_data.name] = 1;
                             } else {
@@ -418,26 +506,27 @@ function Layout() {
         if (graphUtilityObj.paneNodesCount[childDepth]) {
             startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
         }
-        for (var i = startIndex; i < startIndex + 10; i++) {
-            var id = entityNamePrefix[childDepth] + i;
+        var i, id;
+        for (i = startIndex; i < startIndex + 10; i++) {
+            id = entityNamePrefix[childDepth] + i;
             graphJson[rootNode.id].outgoing.push(id);
             graphJson[id] = {
                 "name": id,
                 "depth": childDepth
-            }
+            };
         }
         var parentDepth = rootNode.level - 1;
         startIndex = 0;
         if (graphUtilityObj.paneNodesCount[parentDepth]) {
             startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
         }
-        for (var i = startIndex; i < startIndex + 3; i++) {
-            var id = entityNamePrefix[parentDepth] + i;
+        for (i = startIndex; i < startIndex + 3; i++) {
+            id = entityNamePrefix[parentDepth] + i;
             graphJson[rootNode.id].incoming.push(id);
             graphJson[id] = {
                 "name": id,
                 "depth": parentDepth
-            }
+            };
         }
         return graphJson;
     };
@@ -458,7 +547,6 @@ function Layout() {
                     graphJson = updateGraph(graphJson, nodeObj);
                     graphUtilityObj.getGraphObj(graphJson, nodeObj.name);
                     thisRef.update(nodeObj);
-                    mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
                 }
             }
         };
@@ -468,14 +556,14 @@ function Layout() {
                 callback: function () {
                     highlightConnectedNodes(nodeObj);
                 }
-            }
+            };
         } else {
             actionItems.highLightNode = {
                 name: "Apply Highlighting...",
                 callback: function () {
                     highlightConnectedNodes(nodeObj);
                 }
-            }
+            };
         }
         actionItems.collapseChilds = {
             name: "Collapse Children...",
@@ -483,7 +571,6 @@ function Layout() {
                 nodeObj.outgoing = [];
                 nodeObj.width = 25;
                 deleteChildren(nodeObj.name);
-                mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
             }
         };
         actionItems.collapseParents = {
@@ -491,7 +578,6 @@ function Layout() {
             callback: function () {
                 nodeObj.incoming = [];
                 deleteParent(nodeObj.name);
-                mainSvg.attr("transform", "translate(" + graphUtilityObj.getRenderingCoordinates(mainSvg) + ")");
             }
         };
         var selectedNodeIds = Object.keys(selectedNodes);

@@ -1,4 +1,3 @@
-/* disable text selection */
 svg *::selection {
     background : transparent;
 }
@@ -10,12 +9,20 @@ svg *::-moz-selection {
 svg *::-webkit-selection {
     background:transparent;
 }
-/*http://bl.ocks.org/lgersman/5311083*/
+
 rect.selection {
     stroke          : gray;
     stroke-dasharray: 4px;
     stroke-opacity  : 0.5;
     fill            : transparent;
+}
+
+rect.smallMapSelection{
+    stroke          : red;
+    stroke-dasharray: 4px;
+    stoke-width     : 0.5px;
+    fill            : transparent;
+    background      : transparent;
 }
 
 g.node circle.outer {
@@ -33,9 +40,19 @@ g.node.selected circle.outer {
 button {
     position: absolute;
     background: white;
-    border: 1px solid #FB8C00;
-    color: #FB8C00;
-    padding: 10px;
+    border:0px;
+    color: #343434;
+    padding: 5px 10px;
+    transition: background .3s ease-out;
+    border-radius: 2px;
+}
+
+button.primary{
+    color:orangered;
+}
+
+button:hover{
+    background: lightgray;
 }
 
 #ResetButton, #ConfigButton {
@@ -51,7 +68,7 @@ button {
 }
 
 #applyButton, #cancelButton {
-    bottom: 25px;
+    bottom: 15px;
 }
 
 #applyButton {
@@ -82,13 +99,15 @@ path.link {
 }
 
 #miniSvgContainer{
-    height:200px;
-    width:250px;
+    height:250px;
+    width:200px;
     position:absolute;
     z-index:15;
     left:10px;
     top:10px;
-    border:1px dashed black;
+    border: 1px solid lightgray;
+    box-shadow: 0px 0px 5px lightgrey;
+    background:white;
 }
 
 .overlay-win {
@@ -109,7 +128,7 @@ path.link {
     top: 15%;
     left: 400px;
     width: 500px;
-    height: 500px;
+    height: 370px;
     background: #FFFFFF;
     box-shadow: 10px 8px 10px #888888;
     border-radius: 3px;
@@ -126,4 +145,108 @@ label {
 
 input[type="text"] {
     padding-left: 20px;
+}
+
+.zoom-button{
+    position:absolute;
+    left:10px;
+    top:305px;
+    width:30px;
+    text-align:center;
+    border:1px solid lightgray;
+    border-radius:2px;
+    box-shadow: 0px 0px 5px lightgrey;
+    background:white;
+    user-select:none;
+}
+
+.zoom-button hr{
+    height:1px;
+    margin:0 3px 0 3px;
+    border:0;
+    background:lightgray;
+}
+
+.zoom-button div{
+    color:gray;
+    font-family:arial;
+    font-size:20px;
+    font-weight:800;
+    transition: background 0.3s ease-out;
+}
+
+.zoom-button div:hover{
+    background:lightgray;
+}
+
+.zoom-button .zoom-in{
+    padding:0 4px 0 4px;
+}
+
+.zoom-button .zoom-out{
+    padding:0 6px 0 6px;
+}
+
+input[type="radio"], input[type="radio"] + span, input[type="checkbox"], input[type="checkbox"] + span {
+    cursor:pointer;
+}
+input[type="radio"],input[type="checkbox"]{
+    position:relative;
+    margin-right:15px!important;
+}
+input[type="radio"]:before, input[type="radio"]:checked:after, input[type="checkbox"]:before, input[type="checkbox"]:checked:after{
+    content:"";
+    display:inline-block;
+    position:absolute;
+}
+input[type="radio"]:before,input[type="checkbox"]:before{
+    top:-1px;
+    height:14px;
+    width:14px;
+    border:1px solid lightgray;
+    background:white;
+}
+input[type="radio"]:before, input[type="radio"]:checked:after{
+    border-radius:50%;
+}
+input[type="checkbox"]:before{
+    border-radius:1px;
+}
+input[type="radio"]:checked:before, input[type="checkbox"]:checked:before{
+    border:1px solid orangered;
+}
+input[type="checkbox"]:checked:before{
+    background:orangered;
+}
+input[type="radio"]:checked:after{
+    left:3px;
+    top:2px;
+    height:8px;
+    width:8px;
+    background:orangered;
+}
+input[type="checkbox"]:checked:after{
+    top:1px;
+    left:5px;
+    height:8px;
+    width:4px;
+    border:solid white;
+    border-width:0 2px 2px 0;
+    border-radius:20%;
+    transform:rotate(45deg);
+}
+.enable_selection{
+    position:absolute;
+    left:10px;
+    top:270px;
+}
+.enable_selection input[type="checkbox"]:before{
+     height:22px;
+     width:22px;
+ }
+.enable_selection input[type="checkbox"]:checked:after {
+    left: 6px;
+    height: 15px;
+    width: 8px;
+    border-width:0 3px 3px 0;
 }

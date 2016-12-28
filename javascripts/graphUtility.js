@@ -1,42 +1,94 @@
-function generateGraphData(height, width, x0, y0, paneCount) {
+function GraphUtility(height, width, x0, y0, paneCount) {
     var thisRef = this;
+
     thisRef.nodesMap = [];
     thisRef.linksMap = [];
     thisRef.paneNodesCount = [];
+
     thisRef.nodes = [];
     thisRef.links = [];
 
-    var maxColumns = 1;
     var minSpacing = 25;
 
     thisRef.currentRootObjYPos = 0;
     var currentRootObj = null;
 
-    var heightUsedOfSvg = 0;
-    thisRef.getHeightUsedOfSvg = function () {
-        return heightUsedOfSvg;
-    };
-
     thisRef.getGraphObj = function (graphJson, nodeId) {
         updateNodesAndLinksMaps(graphJson, nodeId);
+        updateCurrentRootObjYPos(nodeId);
         updateWidthInNodesMap();
-        currentRootObj = thisRef.nodesMap[nodeId];
-        if (typeof currentRootObj.y === "undefined") {
-            thisRef.currentRootObjYPos = height / 2;
-        } else {
-            thisRef.currentRootObjYPos = currentRootObj.y;
-        }
-        thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
+        thisRef.updateNodesAndLinksArr(minSpacing);
         return {
             nodes: thisRef.nodes,
             links: thisRef.links
         };
     };
 
+    thisRef.updateNodesAndLinksArr = function (tMinSpacing) {
+        minSpacing = tMinSpacing;
+        updateLinksArr();
+        updateNodesArrAndCoordinates();
+    };
+
     thisRef.getRenderingCoordinates = function (svg) {
         var nodeObj = thisRef.nodesMap[currentRootObj.id];
         var translate = d3.transform(svg.attr("transform")).translate;
         return [x0 + translate[0], y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
+    };
+
+    thisRef.deleteNodesAndLinksFromGraphObj = function (nodeId, nodesToDelete, linksToDelete) {
+        deleteNodesFromGraphObj(nodesToDelete);
+        deleteLinksFromGraphObj(linksToDelete);
+        updateCurrentRootObjYPos(nodeId);
+        updateWidthInNodesMap();
+        thisRef.updateNodesAndLinksArr(minSpacing);
+    };
+
+    var panesHeightOccupied = 0;
+    thisRef.scalingOfSmallMap = function(){
+        return ((250/panesHeightOccupied > 200/width)? 200/width: 250/panesHeightOccupied);
+    };
+
+    var updateCurrentRootObjYPos = function(nodeId){
+        currentRootObj = thisRef.nodesMap[nodeId];
+        if (typeof currentRootObj.y === "undefined") {
+            thisRef.currentRootObjYPos = height / 2;
+        } else {
+            thisRef.currentRootObjYPos = currentRootObj.y;
+        }
+    };
+
+    var deleteLinksFromGraphObj = function(linksToDelete){
+        var linkIdArrayFromNodes = thisRef.links.map(function (link) {
+            return link.source.id + "_" + link.target.id;
+        });
+        for (var index = 0; index < linksToDelete.length; index++) {
+            delete thisRef.linksMap[linksToDelete[index]];
+            var indexInLinkIdArrayFromNodes = linkIdArrayFromNodes.indexOf(linksToDelete[index]);
+            if (indexInLinkIdArrayFromNodes !== -1) {
+                thisRef.links.splice(indexInLinkIdArrayFromNodes, 1);
+                linkIdArrayFromNodes.splice(indexInLinkIdArrayFromNodes, 1);
+            }
+        }
+    };
+
+    var deleteNodesFromGraphObj = function(nodesToDelete){
+        var nodeIdArrayFromNodes = thisRef.nodes.map(function (node) {
+            return node.id;
+        });
+        for (var index = 0; index < nodesToDelete.length; index++) {
+            var level = thisRef.nodesMap[nodesToDelete[index]].level;
+            delete thisRef.nodesMap[nodesToDelete[index]];
+            var indexInPaneNodesCount = thisRef.paneNodesCount[level].indexOf(nodesToDelete[index]);
+            if (indexInPaneNodesCount !== -1) {
+                thisRef.paneNodesCount[level].splice(indexInPaneNodesCount, 1);
+            }
+            var indexInNodeIdArrayFromNodes = nodeIdArrayFromNodes.indexOf(nodesToDelete[index]);
+            if (indexInNodeIdArrayFromNodes !== -1) {
+                thisRef.nodes.splice(indexInNodeIdArrayFromNodes, 1);
+                nodeIdArrayFromNodes.splice(indexInNodeIdArrayFromNodes, 1);
+            }
+        }
     };
 
     var updateWidthInNodesMap = function () {
@@ -64,59 +116,13 @@ function generateGraphData(height, width, x0, y0, paneCount) {
                 width += updateWidthForOutgoingNodes(tempNodesMap, childObj);
             }
         }
-        if (width == 0) {
+        if (width === 0) {
             width = minSpacing;
         }
         nodeObj.iterated = true;
         nodeObj.width = width;
         thisRef.nodesMap[nodeObj.id].width = nodeObj.width;
         return nodeObj.width;
-    };
-
-    thisRef.deleteNodesAndLinksFromGraphObj = function (nodeId, nodesToDelete, linksToDelete) {
-        var nodeIdArrayFromNodes = thisRef.nodes.map(function (node) {
-            return node.id;
-        });
-        for (var index = 0; index < nodesToDelete.length; index++) {
-            var level = thisRef.nodesMap[nodesToDelete[index]].level;
-            delete thisRef.nodesMap[nodesToDelete[index]];
-            var indexInPaneNodesCount = thisRef.paneNodesCount[level].indexOf(nodesToDelete[index]);
-            if (indexInPaneNodesCount !== -1) {
-                thisRef.paneNodesCount[level].splice(indexInPaneNodesCount, 1);
-            }
-            var indexInNodeIdArrayFromNodes = nodeIdArrayFromNodes.indexOf(nodesToDelete[index]);
-            if (indexInNodeIdArrayFromNodes !== -1) {
-                thisRef.nodes.splice(indexInNodeIdArrayFromNodes, 1);
-                nodeIdArrayFromNodes.splice(indexInNodeIdArrayFromNodes, 1);
-            }
-        }
-        var linkIdArrayFromNodes = thisRef.links.map(function (link) {
-            return link.source.id + "_" + link.target.id;
-        });
-        for (index = 0; index < linksToDelete.length; index++) {
-            delete thisRef.linksMap[linksToDelete[index]];
-            var indexInLinkIdArrayFromNodes = linkIdArrayFromNodes.indexOf(linksToDelete[index]);
-            if (indexInLinkIdArrayFromNodes !== -1) {
-                thisRef.links.splice(indexInLinkIdArrayFromNodes, 1);
-                linkIdArrayFromNodes.splice(indexInLinkIdArrayFromNodes, 1);
-            }
-        }
-        updateWidthInNodesMap();
-        currentRootObj = thisRef.nodesMap[nodeId];
-        if (typeof currentRootObj.y === "undefined") {
-            thisRef.currentRootObjYPos = height / 2;
-        } else {
-            thisRef.currentRootObjYPos = currentRootObj.y;
-        }
-        thisRef.updateNodesAndLinksArr(minSpacing, maxColumns);
-    };
-
-    thisRef.updateNodesAndLinksArr = function (tMinSpacing, tMaxColumns) {
-        heightUsedOfSvg = 0;
-        minSpacing = tMinSpacing;
-        maxColumns = tMaxColumns;
-        updateLinksArr();
-        updateNodesArrAndCoordinates();
     };
 
     var updateNodesAndLinksMaps = function (graphJson, nodeId, direction, parentNodeId) {
@@ -188,7 +194,6 @@ function generateGraphData(height, width, x0, y0, paneCount) {
         }
     };
 
-    var panesHeightOccupied = 0;
     var updateNodesArrAndCoordinates = function () {
         panesHeightOccupied = 0;
         var paneWidth = width / paneCount;
