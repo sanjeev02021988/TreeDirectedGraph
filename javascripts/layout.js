@@ -3,8 +3,8 @@ function Layout() {
 
     var containerId = "";
     var graph = null;
-    var width = 0;
-    var height = 0;
+    var width = 0,
+        height = 0;
     var visibleWidth = 0,
         visibleHeight = 0;
     var nodeRadius = 10;
@@ -17,9 +17,9 @@ function Layout() {
     var selectedNodes = [];
     var isNodeHighlighted = false;
 
-    var svg = null;
-    var svgParent = null;
-    var mainSvg = null;
+    var svg = null,
+        svgParent = null,
+        mainSvg = null;
 
     //Providing support for dynamic generation of colors.
     var color = d3.scale.category20();
@@ -67,7 +67,8 @@ function Layout() {
         nodes.exit().transition().remove();
         links.exit().transition().remove();
         var initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
-        mainSvg.attr("transform", "translate(" + initialCoordinates + ")");
+        var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+        mainSvg.attr("transform", "translate(" + initialCoordinates + ")scale(" + mainSvgTransformObj.scale[0] + ")");
         addRectToSmallMap();
     };
 
@@ -93,18 +94,23 @@ function Layout() {
         enableToolTip();
     };
 
+    var getDecimalPointPrecision = function(number, n){
+        return Number(parseFloat(number).toPrecision(n + 1));
+    };
+
     var zoomIncrementFactor = 0;
     this.zoomInOut = function (incrementFactor) {
         svgParent.selectAll("rect.selection").remove();
         var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
-        var newScaling = mainSvgTransformObj.scale[0] + incrementFactor;
+        var newScaling = getDecimalPointPrecision(mainSvgTransformObj.scale[0] + incrementFactor, 2);
         if(newScaling <= minZooming || newScaling >= maxZooming){
             return;
         }
-        console.log("center:("+(-1 * mainSvgTransformObj.translate[0] + visibleWidth / 2)+","+(-1 * mainSvgTransformObj.translate[1] + visibleWidth / 2)+")");
-        var xC = mainSvgTransformObj.translate[0] + (-1 * mainSvgTransformObj.translate[0] + visibleWidth / 2) * (1 - newScaling);
-        var yC = mainSvgTransformObj.translate[1] + (-1 * mainSvgTransformObj.translate[1] + visibleHeight / 2) * (1 - newScaling);
-        var newTranslatePos = [xC, yC];
+        //console.log("center:("+(-1 * mainSvgTransformObj.translate[0] + visibleWidth / 2)+","+(-1 * mainSvgTransformObj.translate[1] + visibleHeight / 2)+")");
+        var xC = mainSvgTransformObj.translate[0] + (-1 * getDecimalPointPrecision(mainSvgTransformObj.translate[0], 2) + visibleWidth / 2) * (-1 * incrementFactor);
+        var yC = mainSvgTransformObj.translate[1] + (-1 * getDecimalPointPrecision(mainSvgTransformObj.translate[1], 2) + visibleHeight / 2) * (-1 * incrementFactor);
+        var newTranslatePos = [getDecimalPointPrecision(xC, 2), getDecimalPointPrecision(yC, 2)];
+        //console.log("NewCenter:("+(visibleWidth / 2 + -1 * newTranslatePos[0])+","+(visibleHeight / 2 + -1 * newTranslatePos[1])+")");
         mainSvg.attr("transform", "translate(" + newTranslatePos + ")scale(" + newScaling + ")");
         addRectToSmallMap(newTranslatePos, newScaling);
         zoomIncrementFactor += incrementFactor;
@@ -577,46 +583,7 @@ function Layout() {
             });
     };
 
-    this.updateGraph = function (rootNode) {
-        var graphJson = {};
-        graphJson[rootNode.id] = {
-            "name": rootNode.name,
-            "depth": rootNode.level,
-            "incoming": [],
-            "outgoing": []
-        };
-        var entityNamePrefix = ["RF", "DS", "DRD", "Cube", "WB", "DB"];
-        var childDepth = rootNode.level + 1;
-        if(entityNamePrefix[childDepth]){
-            var startIndex = 0;
-            if (graphUtilityObj.paneNodesCount[childDepth]) {
-                startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
-            }
-            var i, id;
-            for (i = startIndex; i < startIndex + 10; i++) {
-                id = entityNamePrefix[childDepth] + i;
-                graphJson[rootNode.id].outgoing.push(id);
-                graphJson[id] = {
-                    "name": id,
-                    "depth": childDepth
-                };
-            }
-        }
-        var parentDepth = rootNode.level - 1;
-        if(entityNamePrefix[parentDepth]){
-            startIndex = 0;
-            if (graphUtilityObj.paneNodesCount[parentDepth]) {
-                startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
-            }
-            for (i = startIndex; i < startIndex + 3; i++) {
-                id = entityNamePrefix[parentDepth] + i;
-                graphJson[rootNode.id].incoming.push(id);
-                graphJson[id] = {
-                    "name": id,
-                    "depth": parentDepth
-                };
-            }
-        }
+    this.updateGraph = function (graphJson, rootNode) {
         graphUtilityObj.getGraphObj(graphJson, rootNode.name);
         thisRef.update();
     };

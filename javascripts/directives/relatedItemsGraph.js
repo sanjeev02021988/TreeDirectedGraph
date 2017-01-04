@@ -36,6 +36,10 @@ angular.module("myApp").directive("relatedItemsGraph", [function () {
                 layoutObj.reDraw($scope.config.style);
             });
 
+            $scope.$on("updateGraph",function(event, opt){
+                layoutObj.updateGraph(opt.graphJson, opt.nodeObj);
+            });
+
             $scope.fnEnableSelection = function () {
                 layoutObj.enableSelection($scope.enableSelection);
             };

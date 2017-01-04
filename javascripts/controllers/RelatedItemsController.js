@@ -45,7 +45,8 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
             showInComingNodes: {
                 name: "Connected Nodes...",
                 callback: function () {
-                    layoutObj.updateGraph(nodeObj);
+                    var graphJson = RelatedItemsService.getDummyConnectedNodes(nodeObj, layoutObj.getGraphUtilityObj());
+                    $scope.$broadcast("updateGraph",{graphJson:graphJson, nodeObj: nodeObj});
                 }
             }
         };
