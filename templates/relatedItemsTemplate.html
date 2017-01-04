@@ -1,0 +1,17 @@
+<div id="mainSvgContainer" style="overflow:hidden">
+    <svg class="graphSVG mainSVG"></svg>
+</div>
+<div id="miniSvgContainer" style="overflow:hidden;">
+    <svg class="graphSVG miniSVG"></svg>
+</div>
+<div class="enable_selection">
+    <label>
+        <input type="checkbox" name="disablePanning" ng-model="enableSelection" ng-click="fnEnableSelection()"/><span>Enable Selection</span>
+    </label>
+    <button id="ResetButton">RESET</button>
+</div>
+<div class="zoom-button">
+    <div class="zoom-in" ng-click="zoomInOut(1)">+</div>
+    <hr>
+    <div class="zoom-out" ng-click="zoomInOut(-1)">-</div>
+</div>

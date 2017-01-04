@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="myApp">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Related Entities</title>
@@ -8,92 +8,23 @@
         <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css"/>
     </head>
     <body>
-        <div id="mainSvgContainer" style="overflow:hidden">
-            <svg class="graphSVG mainSVG"></svg>
+        <div ng-controller="RelatedItemsController as relatedItemsCtrl">
+            <div related-items-graph config="relatedItemsCtrl.config"></div>
+            <button id="ConfigButton" class="primary" ng-click="relatedItemsCtrl.fnShowConfigDialog()">CONFIG</button>
+            <div ng-show="relatedItemsCtrl.showConfigDialog" ng-include="'./templates/configDialog.html'"></div>
         </div>
-        <div id="miniSvgContainer" style="overflow:hidden;">
-            <svg class="graphSVG miniSVG"></svg>
-        </div>
-        <div class="enable_selection">
-            <label>
-                <input type="checkbox" name="disablePanning"/><span>Enable Selection</span>
-            </label>
-        </div>
-        <div class="zoom-button">
-            <div class="zoom-in">+</div>
-            <hr>
-            <div class="zoom-out">-</div>
-        </div>
-        <button id="ResetButton">RESET</button>
-        <button id="ConfigButton" class="primary">CONFIG</button>
-        <div id="ConfigDialog" class="dialog">
-            <div class="dialog-container">
-                <div>
-                    <h3 style="color: #a6a6a6;">CONFIG</h3>
-                </div>
-                <form style="margin-top:30px;">
-                    <div class="form-group row">
-                        <label for="minSpace" class="col-sm-4 form-control-label">Minimum Spacing</label>
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" id="minSpace" value="25" placeholder="Spacing">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="edgeColor" class="col-sm-4 form-control-label">Edge Color</label>
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" id="edgeColor" value="#999999" placeholder="Color">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label class="col-sm-4">Edge Type</label>
-                        <div class="col-sm-8">
-                            <label class="radio-inline">
-                                <input type="radio" name="edgeType" value="STRAIGHT" checked>
-                                Straight
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="edgeType" value="CURVE">
-                                Curve
-                            </label>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label for="nodeRadius" class="col-sm-4 form-control-label">Node Radius</label>
-                        <div class="col-sm-3">
-                            <input type="text" class="form-control" id="nodeRadius" value="10" placeholder="Radius">
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <label class="col-sm-4">Node Label</label>
-                        <div class="col-sm-8">
-                            <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="CENTER">Center
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="RIGHT" checked>Right
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="BOTTOM">Bottom
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="nodeLabel" value="TOP">Top
-                            </label>
-                        </div>
-                    </div>
-                </form>
-                <button id="cancelButton">CANCEL</button>
-                <button id="applyButton" class="primary">APPLY</button>
-            </div>
-        </div>
-        <div class="overlay-win"></div>
+        <script src="./javascripts/thirdparty/angular.min.js"></script>
         <script src="./javascripts/thirdparty/jquery.min.js"></script>
         <script src="./javascripts/thirdparty/d3.v3.min.js"></script>
         <script src="./javascripts/thirdparty/d3.tip.v0.6.3.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.contextMenu.js"></script>
         <script src="./javascripts/thirdparty/contextMenu/jquery.ui.position.js"></script>
         <script src="./javascripts/thirdparty/bootstrap.min.js"></script>
+        <script src="./app.js"></script>
+        <script src="./javascripts/services/RelatedItemsService.js"></script>
         <script src="./javascripts/graphUtility.js"></script>
-        <script src="javascripts/layout.js"></script>
-        <script src="./javascripts/graph.js"></script>
+        <script src="./javascripts/layout.js"></script>
+        <script src="./javascripts/directives/relatedItemsGraph.js"></script>
+        <script src="./javascripts/controllers/RelatedItemsController.js"></script>
     </body>
 </html>

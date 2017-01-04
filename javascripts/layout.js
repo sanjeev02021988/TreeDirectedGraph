@@ -5,8 +5,10 @@ function Layout() {
     var graph = null;
     var width = 0;
     var height = 0;
+    var visibleWidth = 0,
+        visibleHeight = 0;
     var nodeRadius = 10;
-    var edgeType = "STRAIGHT";
+    var edgeType = "CURVE";
     var edgeColor = "#999999";
     var labelDirection = "RIGHT";
 
@@ -25,27 +27,39 @@ function Layout() {
     var zoom = null;
     var zoomSmallMap = null;
 
-    thisRef.init = function (tContainerId, tGraph, tWidth, tHeight, tNodeRadius, tEdgeType, tEdgeColor, tLabelDirection) {
-        containerId = tContainerId;
-        graph = tGraph;
-        width = tWidth;
-        height = tHeight;
-        nodeRadius = tNodeRadius;
-        edgeType = tEdgeType;
-        edgeColor = tEdgeColor;
-        labelDirection = tLabelDirection;
-        startLayoutCreation();
+    var configObj = null;
+    var graphUtilityObj = null;
+
+    thisRef.getGraphUtilityObj = function(){
+      return graphUtilityObj;
     };
 
-    thisRef.reDraw = function (tRadius, tEdgeType, tEdgeColor, tLabelDirection) {
-        nodeRadius = tRadius;
-        edgeType = tEdgeType;
-        edgeColor = tEdgeColor;
-        labelDirection = tLabelDirection;
+    thisRef.init = function (containerConfig, mainSvgConfig, tConfigObj) {
+        containerId = containerConfig.id;
+        visibleWidth = containerConfig.width;
+        visibleHeight = containerConfig.height;
+        width = mainSvgConfig.width;
+        height = mainSvgConfig.height;
+        configObj = tConfigObj;
+        nodeRadius = configObj.style.node.radius;
+        edgeType = configObj.style.edge.type;
+        edgeColor = configObj.style.edge.color;
+        labelDirection = configObj.style.label.direction;
+        graphUtilityObj = new GraphUtility(visibleHeight, visibleWidth, mainSvgConfig.x0, mainSvgConfig.y0, configObj.paneCount);
+        //Convert tree json into graph obj which has nodes and edges.
+        graph = graphUtilityObj.getGraphObj(tConfigObj.data, tConfigObj.rootNodeId);
+    };
+
+    thisRef.reDraw = function (tStyleObj) {
+        nodeRadius = tStyleObj.node.radius;
+        edgeType = tStyleObj.edge.type;
+        edgeColor = tStyleObj.edge.color;
+        labelDirection = tStyleObj.label.direction;
         svg.remove();
+        graphUtilityObj.updateNodesAndLinksArr(tStyleObj.node.minSpacing);
         nodes = null;
         links = null;
-        startLayoutCreation();
+        thisRef.draw();
     };
 
     thisRef.update = function () {
@@ -57,7 +71,7 @@ function Layout() {
         addRectToSmallMap();
     };
 
-    var startLayoutCreation = function () {
+    thisRef.draw = function () {
         initializeLayout();
         updateLayout();
     };
@@ -379,7 +393,7 @@ function Layout() {
         nodes.on('contextmenu',contextMenuCallback)
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
-            .on('click', highlightConnectedNodes);
+            .on('click', this.highlightConnectedNodes);
     };
 
     var nodeLinkedInfo = {};
@@ -403,7 +417,7 @@ function Layout() {
         });
     };
 
-    var highlightConnectedNodes = function (nodeObj, forwardDirection) {
+    this.highlightConnectedNodes = function (nodeObj, forwardDirection) {
         if (!isNodeHighlighted) {
             var highlightNodeMap = [];
 
@@ -441,19 +455,22 @@ function Layout() {
         }
     };
 
-    var deleteParent = function (nodeId) {
+    this.deleteParent = function (nodeId) {
         var nodesToDelete = [];
         var linksToDelete = [];
         recursivelyDelete(nodeId);
         function recursivelyDelete(nodeId) {
             var nodeObj = nodeLinkedInfo[nodeId];
+            if(!nodeObj){
+                return;
+            }
             for (var childId in nodeObj.incoming) {
-                linksToDelete.push(childId + "_" + nodeId);
-                delete nodeObj.incoming[childId];
                 var childObj = nodeLinkedInfo[childId];
-                delete childObj.outgoing[nodeId];
-                if (Object.keys(childObj.outgoing).length === 0) {
+                if (Object.keys(childObj.outgoing).length === 1) {
                     nodesToDelete.push(childId);
+                    linksToDelete.push(childId + "_" + nodeId);
+                    delete nodeObj.incoming[childId];
+                    delete childObj.outgoing[nodeId];
                     recursivelyDelete(childId);
                 }
             }
@@ -463,19 +480,22 @@ function Layout() {
         thisRef.update();
     };
 
-    var deleteChildren = function (nodeId) {
+    this.deleteChildren = function (nodeId) {
         var nodesToDelete = [];
         var linksToDelete = [];
         recursivelyDelete(nodeId);
         function recursivelyDelete(nodeId) {
             var nodeObj = nodeLinkedInfo[nodeId];
+            if(!nodeObj){
+                return;
+            }
             for (var childId in nodeObj.outgoing) {
-                linksToDelete.push(nodeId + "_" + childId);
-                delete nodeObj.outgoing[childId];
                 var childObj = nodeLinkedInfo[childId];
-                delete childObj.incoming[nodeId];
-                if (Object.keys(childObj.incoming).length === 0) {
+                if (Object.keys(childObj.incoming).length === 1) {
                     nodesToDelete.push(childId);
+                    linksToDelete.push(nodeId + "_" + childId);
+                    delete nodeObj.outgoing[childId];
+                    delete childObj.incoming[nodeId];
                     recursivelyDelete(childId);
                 }
             }
@@ -557,108 +577,63 @@ function Layout() {
             });
     };
 
-    var updateGraph = function (graphJson, rootNode) {
+    this.updateGraph = function (rootNode) {
+        var graphJson = {};
+        graphJson[rootNode.id] = {
+            "name": rootNode.name,
+            "depth": rootNode.level,
+            "incoming": [],
+            "outgoing": []
+        };
         var entityNamePrefix = ["RF", "DS", "DRD", "Cube", "WB", "DB"];
         var childDepth = rootNode.level + 1;
-        var startIndex = 0;
-        if (graphUtilityObj.paneNodesCount[childDepth]) {
-            startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
-        }
-        var i, id;
-        for (i = startIndex; i < startIndex + 10; i++) {
-            id = entityNamePrefix[childDepth] + i;
-            graphJson[rootNode.id].outgoing.push(id);
-            graphJson[id] = {
-                "name": id,
-                "depth": childDepth
-            };
+        if(entityNamePrefix[childDepth]){
+            var startIndex = 0;
+            if (graphUtilityObj.paneNodesCount[childDepth]) {
+                startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
+            }
+            var i, id;
+            for (i = startIndex; i < startIndex + 10; i++) {
+                id = entityNamePrefix[childDepth] + i;
+                graphJson[rootNode.id].outgoing.push(id);
+                graphJson[id] = {
+                    "name": id,
+                    "depth": childDepth
+                };
+            }
         }
         var parentDepth = rootNode.level - 1;
-        startIndex = 0;
-        if (graphUtilityObj.paneNodesCount[parentDepth]) {
-            startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
+        if(entityNamePrefix[parentDepth]){
+            startIndex = 0;
+            if (graphUtilityObj.paneNodesCount[parentDepth]) {
+                startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
+            }
+            for (i = startIndex; i < startIndex + 3; i++) {
+                id = entityNamePrefix[parentDepth] + i;
+                graphJson[rootNode.id].incoming.push(id);
+                graphJson[id] = {
+                    "name": id,
+                    "depth": parentDepth
+                };
+            }
         }
-        for (i = startIndex; i < startIndex + 3; i++) {
-            id = entityNamePrefix[parentDepth] + i;
-            graphJson[rootNode.id].incoming.push(id);
-            graphJson[id] = {
-                "name": id,
-                "depth": parentDepth
-            };
-        }
-        return graphJson;
+        graphUtilityObj.getGraphObj(graphJson, rootNode.name);
+        thisRef.update();
     };
+
+    this.getSelectedNodes = function(){
+      return selectedNodes;
+    };
+
+    this.isNodesHighlighted = function(){
+        return isNodeHighlighted;
+    };
+
     var currentNodObj = null;
     var showContextMenu = function (nodeObj) {
         currentNodObj = nodeObj;
         $.contextMenu('destroy');
-        var actionItems = {
-            showInComingNodes: {
-                name: "Connected Nodes...",
-                callback: function () {
-                    var graphJson = {};
-                    graphJson[nodeObj.id] = {
-                        "name": nodeObj.name,
-                        "depth": nodeObj.level,
-                        "incoming": [],
-                        "outgoing": []
-                    };
-                    graphJson = updateGraph(graphJson, nodeObj);
-                    graphUtilityObj.getGraphObj(graphJson, nodeObj.name);
-                    thisRef.update(nodeObj);
-                }
-            }
-        };
-        if (isNodeHighlighted) {
-            actionItems.highLightNode = {
-                name: "Remove Highlighting...",
-                callback: function () {
-                    highlightConnectedNodes(nodeObj);
-                }
-            };
-        } else {
-            actionItems.highLightParent = {
-                name: "Highlight Parent...",
-                callback: function () {
-                    highlightConnectedNodes(nodeObj, false);
-                }
-            };
-            actionItems.highLightChildren = {
-                name: "Highlight Children...",
-                callback: function () {
-                    highlightConnectedNodes(nodeObj, true);
-                }
-            };
-        }
-        actionItems.collapseChilds = {
-            name: "Collapse Children...",
-            callback: function () {
-                nodeObj.outgoing = [];
-                nodeObj.width = 25;
-                deleteChildren(nodeObj.name);
-            }
-        };
-        actionItems.collapseParents = {
-            name: "Collapse Parents...",
-            callback: function () {
-                nodeObj.incoming = [];
-                deleteParent(nodeObj.name);
-            }
-        };
-        var selectedNodeIds = Object.keys(selectedNodes);
-        if (selectedNodeIds.length > 1) {
-            actionItems = {};
-        }
-        actionItems.createCab = {
-            name: "Generate CAB...",
-            callback: function () {
-                if (selectedNodeIds.length === 0) {
-                    alert(nodeObj.name);
-                } else {
-                    alert(selectedNodeIds.join());
-                }
-            }
-        };
+        var actionItems = configObj.getContextMenuItemsCallback(nodeObj, thisRef);
         $.contextMenu({
             selector: 'g.node',
             items: actionItems

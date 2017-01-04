@@ -1,0 +1,16 @@
+{
+    "style": {
+        "node": {
+            "radius": 10,
+            "minSpacing": 25
+        },
+        "edge": {
+            "type": "CURVE",
+            "color": "#999999"
+        },
+        "label": {
+            "direction": "RIGHT"
+        }
+    },
+    "paneCount": 6
+}
