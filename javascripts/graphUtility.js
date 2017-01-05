@@ -46,7 +46,7 @@ function GraphUtility(height, width, x0, y0, paneCount) {
 
     var panesHeightOccupied = 0;
     thisRef.scalingOfSmallMap = function(){
-        return ((250/panesHeightOccupied > 200/width)? 200/width: 250/panesHeightOccupied);
+        return ((111/panesHeightOccupied > 230/width)? 230/width: 111/panesHeightOccupied);
     };
 
     var updateCurrentRootObjYPos = function(nodeId){

@@ -4,14 +4,23 @@
 <div id="miniSvgContainer" style="overflow:hidden;">
     <svg class="graphSVG miniSVG"></svg>
 </div>
-<div class="enable_selection">
-    <label>
-        <input type="checkbox" name="disablePanning" ng-model="enableSelection" ng-click="fnEnableSelection()"/><span>Enable Selection</span>
-    </label>
-    <button id="ResetButton">RESET</button>
+<div class="action-bar">
+    <div>
+        <i class="material-icons">home</i>
+    </div>
+    <div>
+        <i class="material-icons" id="ResetButton">refresh</i>
+    </div>
+    <div>
+        <i class="material-icons" ng-click="zoomInOut(1)">add_circle</i>
+    </div>
+    <div>
+        <i class="material-icons" ng-click="zoomInOut(-1)">remove_circle</i>
+    </div>
+    <div class="kyvos-icons">
+        <span>L</span>
+    </div>
 </div>
-<div class="zoom-button">
-    <div class="zoom-in" ng-click="zoomInOut(1)">+</div>
-    <hr>
-    <div class="zoom-out" ng-click="zoomInOut(-1)">-</div>
+<div class="related-items-note">
+    <span>Note: ctrl + drag for selection.</span>
 </div>

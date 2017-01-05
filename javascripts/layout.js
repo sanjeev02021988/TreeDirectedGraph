@@ -345,6 +345,20 @@ function Layout() {
     };
 
     var renderNode = function () {
+        /*var nodesToBeDeleted = nodes.exit();
+        var noNodesDeleted = (Object.keys(nodesToBeDeleted[0]).length === 1);
+        if(!noNodesDeleted){
+            nodesToBeDeleted
+                .transition().duration(600)
+                .attr("transform", function (d) {
+                    var x = d.x, y = d.y;
+                    if (currentNodObj !== null) {
+                        x = currentNodObj.x;
+                        y = currentNodObj.y;
+                    }
+                    return "translate(" + x + "," + y + ")";
+                }).remove();
+        }*/
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
             if (!d.rendered) {
@@ -399,7 +413,7 @@ function Layout() {
         nodes.on('contextmenu',contextMenuCallback)
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
-            .on('click', this.highlightConnectedNodes);
+            .on('click', thisRef.highlightConnectedNodes);
     };
 
     var nodeLinkedInfo = {};
@@ -486,9 +500,23 @@ function Layout() {
         thisRef.update();
     };
 
+    var transitionDeletedNode = function(){
+        nodesToBeDeleted
+            .transition().duration(600)
+            .attr("transform", function (d) {
+                var x = d.x, y = d.y;
+                if (currentNodObj !== null) {
+                    x = currentNodObj.x;
+                    y = currentNodObj.y;
+                }
+                return "translate(" + x + "," + y + ")";
+            }).remove();
+    };
+
     this.deleteChildren = function (nodeId) {
         var nodesToDelete = [];
         var linksToDelete = [];
+
         recursivelyDelete(nodeId);
         function recursivelyDelete(nodeId) {
             var nodeObj = nodeLinkedInfo[nodeId];

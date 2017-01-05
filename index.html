@@ -6,11 +6,14 @@
         <link type="text/css" rel="stylesheet" href="stylesheets/style.css"/>
         <link type="text/css" rel="stylesheet" href="stylesheets/bootstrap.min.css"/>
         <link type="text/css" rel="stylesheet" href="./javascripts/thirdparty/contextMenu/jquery.contextMenu.css"/>
+        <link type="text/css" rel="stylesheet" href="./stylesheets/google_font_icons.css"/>
     </head>
     <body>
         <div ng-controller="RelatedItemsController as relatedItemsCtrl">
             <div related-items-graph config="relatedItemsCtrl.config"></div>
-            <button id="ConfigButton" class="primary" ng-click="relatedItemsCtrl.fnShowConfigDialog()">CONFIG</button>
+            <div id="ConfigButton" ng-click="relatedItemsCtrl.fnShowConfigDialog()" class="setting-bar">
+                <i class="material-icons">settings</i>
+            </div>
             <div ng-show="relatedItemsCtrl.showConfigDialog" ng-include="'./templates/configDialog.html'"></div>
         </div>
         <script src="./javascripts/thirdparty/angular.min.js"></script>

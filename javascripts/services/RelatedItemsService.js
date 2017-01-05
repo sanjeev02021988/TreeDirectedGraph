@@ -41,7 +41,7 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
                 startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
             }
             var i, id;
-            for (i = startIndex; i < startIndex + 10; i++) {
+            for (i = startIndex; i < startIndex + 5; i++) {
                 id = entityNamePrefix[childDepth] + i;
                 graphJson[rootNode.id].outgoing.push(id);
                 graphJson[id] = {
@@ -56,7 +56,7 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
             if (graphUtilityObj.paneNodesCount[parentDepth]) {
                 startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;
             }
-            for (i = startIndex; i < startIndex + 3; i++) {
+            for (i = startIndex; i < startIndex + 2; i++) {
                 id = entityNamePrefix[parentDepth] + i;
                 graphJson[rootNode.id].incoming.push(id);
                 graphJson[id] = {

@@ -55,12 +55,8 @@ button:hover{
     background: lightgray;
 }
 
-#ResetButton, #ConfigButton {
+#ResetButton{
     top: 30px;
-}
-
-#ConfigButton {
-    right: 30px;
 }
 
 #applyButton, #cancelButton {
@@ -94,13 +90,19 @@ path.link {
     color: black;
 }
 
+#mainSvgContainer{
+    border:1px solid lightgray;
+    margin:10px;
+    box-shadow:5px 5px 50px lightgray;
+}
+
 #miniSvgContainer{
-    height:250px;
-    width:200px;
+    height:111px;
+    width:230px;
     position:absolute;
     z-index:15;
-    left:10px;
-    top:10px;
+    right: 20px;
+    bottom: 20px;
     border: 1px solid lightgray;
     box-shadow: 0px 0px 5px lightgrey;
     background:white;
@@ -139,46 +141,6 @@ label {
 
 input[type="text"] {
     padding-left: 20px;
-}
-
-.zoom-button{
-    position:absolute;
-    left:10px;
-    top:335px;
-    width:30px;
-    text-align:center;
-    border:1px solid lightgray;
-    border-radius:2px;
-    box-shadow: 0px 0px 5px lightgrey;
-    background:white;
-    user-select:none;
-}
-
-.zoom-button hr{
-    height:1px;
-    margin:0 3px 0 3px;
-    border:0;
-    background:lightgray;
-}
-
-.zoom-button div{
-    color:gray;
-    font-family:arial;
-    font-size:20px;
-    font-weight:800;
-    transition: background 0.3s ease-out;
-}
-
-.zoom-button div:hover{
-    background:lightgray;
-}
-
-.zoom-button .zoom-in{
-    padding:0 4px 0 4px;
-}
-
-.zoom-button .zoom-out{
-    padding:0 6px 0 6px;
 }
 
 input[type="radio"], input[type="radio"] + span, input[type="checkbox"], input[type="checkbox"] + span {
@@ -229,18 +191,43 @@ input[type="checkbox"]:checked:after{
     border-radius:20%;
     transform:rotate(45deg);
 }
-.enable_selection{
+
+.action-bar,.setting-bar{
     position:absolute;
-    left:10px;
-    top:270px;
+    right:20px;
 }
-.enable_selection input[type="checkbox"]:before{
-     height:22px;
-     width:22px;
- }
-.enable_selection input[type="checkbox"]:checked:after {
-    left: 6px;
-    height: 15px;
-    width: 8px;
-    border-width:0 3px 3px 0;
+.setting-bar{
+    top:25px;
+}
+.action-bar{
+    top:53px;
+}
+.material-icons, .kyvos-icons, .kyvos-icons label{
+    cursor:pointer;
+}
+.material-icons{
+    color:lightgray;
+}
+.material-icons:hover{
+    color:orangered;
+}
+.kyvos-icons:hover{
+    background:orangered;
+}
+.kyvos-icons{
+    width:20px;
+    height:20px;
+    margin:2px;
+    color:white!important;
+    background:lightgray;
+    border-radius:50%;
+    line-height:20px;
+    text-align:center;
+    font-size:small;
+}
+.related-items-note{
+    left:25px;
+    bottom:20px;
+    position:absolute;
+    color:darkgray;
 }
