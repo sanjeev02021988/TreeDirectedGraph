@@ -26,12 +26,14 @@ function Layout() {
     var tip = null;
     var zoom = null;
     var zoomSmallMap = null;
+    var maxZooming = 3,
+        minZooming = 0.5;
 
     var configObj = null;
     var graphUtilityObj = null;
 
-    thisRef.getGraphUtilityObj = function(){
-      return graphUtilityObj;
+    thisRef.getGraphUtilityObj = function () {
+        return graphUtilityObj;
     };
 
     thisRef.init = function (containerConfig, mainSvgConfig, tConfigObj) {
@@ -94,71 +96,63 @@ function Layout() {
         enableToolTip();
     };
 
-    var getDecimalPointPrecision = function(number, n){
-        return Number(parseFloat(number).toPrecision(n + 1));
-    };
-
-    var zoomIncrementFactor = 0;
     this.zoomInOut = function (incrementFactor) {
-        svgParent.selectAll("rect.selection").remove();
-        var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
-        var newScaling = getDecimalPointPrecision(mainSvgTransformObj.scale[0] + incrementFactor, 2);
-        if(newScaling <= minZooming || newScaling >= maxZooming){
+        if (selectionEnabled) {
             return;
         }
-        //console.log("center:("+(-1 * mainSvgTransformObj.translate[0] + visibleWidth / 2)+","+(-1 * mainSvgTransformObj.translate[1] + visibleHeight / 2)+")");
-        var xC = mainSvgTransformObj.translate[0] + (-1 * getDecimalPointPrecision(mainSvgTransformObj.translate[0], 2) + visibleWidth / 2) * (-1 * incrementFactor);
-        var yC = mainSvgTransformObj.translate[1] + (-1 * getDecimalPointPrecision(mainSvgTransformObj.translate[1], 2) + visibleHeight / 2) * (-1 * incrementFactor);
-        var newTranslatePos = [getDecimalPointPrecision(xC, 2), getDecimalPointPrecision(yC, 2)];
-        //console.log("NewCenter:("+(visibleWidth / 2 + -1 * newTranslatePos[0])+","+(visibleHeight / 2 + -1 * newTranslatePos[1])+")");
-        mainSvg.attr("transform", "translate(" + newTranslatePos + ")scale(" + newScaling + ")");
-        addRectToSmallMap(newTranslatePos, newScaling);
-        zoomIncrementFactor += incrementFactor;
+        svgParent.selectAll("rect.selection").remove();
+        var newScaling = zoom.scale() + incrementFactor;
+        if (newScaling <= minZooming || newScaling >= maxZooming) {
+            return;
+        }
+        var center = [visibleWidth / 2, visibleHeight / 2],
+            translate = zoom.translate(),
+            scale = zoom.scale(),
+            translate0 = [],
+            l = [];
+
+        translate0 = [(center[0] - translate[0]) / scale, (center[1] - translate[1]) / scale];
+        l = [translate0[0] * newScaling + translate[0], translate0[1] * newScaling + translate[1]];
+
+        translate[0] += center[0] - l[0];
+        translate[1] += center[1] - l[1];
+        mainSvg.attr("transform", "translate(" + translate + ")scale(" + newScaling + ")");
+        addRectToSmallMap(translate, newScaling);
+        zoom.scale(newScaling).translate(translate);
     };
 
     var selectionEnabled = false;
-    var translateVector = [0, 0];
     this.enableSelection = function (enableSelection) {
         selectionEnabled = enableSelection;
-        if (selectionEnabled) {
-            zoom.on("zoom.mousemove", null);
-        }
     };
-    var maxZooming = 2;
-    var minZooming = 0.6;
-    var prevMainSvgD3Translate = [0, 0];
-    var prevMiniSvgD3Translate = [0, 0];
+
     var enableZooming = function () {
         zoom = d3.behavior.zoom()
             .scaleExtent([minZooming, maxZooming])
             .on("zoom", zoomed);
 
-        function zoomed(events) {
-            var mainSvgPosition = d3.transform(mainSvg.attr("transform")).translate;
-            var scaling = d3.event.scale + zoomIncrementFactor;
-            var newTranslatePos = mainSvgPosition;
-            if (selectionEnabled) {
-                /*var coordinates = d3.mouse(mainSvg.node());
-                 var x = coordinates[0];
-                 var y = coordinates[1];
-                 newTranslatePos = [x * (scaling - 1), y * (scaling - 1)];*/
-            } else {
-                newTranslatePos = [mainSvgPosition [0] + d3.event.translate[0] - prevMainSvgD3Translate[0], mainSvgPosition[1] + d3.event.translate[1] - prevMainSvgD3Translate[1]];
-                svgParent.selectAll("rect.selection").remove();
-            }
-            mainSvg.attr("transform", "translate(" + newTranslatePos + ")scale(" + scaling + ")");
-            addRectToSmallMap(newTranslatePos, scaling);
-            prevMainSvgD3Translate = d3.event.translate;
-        }
-
         $("#ResetButton").on("click", reset);
-        function reset() {
-            mainSvg.attr("transform", "translate(0,0)scale(1)");
-            zoom.translate([0, 0]).scale(1);
-            addRectToSmallMap([0, 0], 1);
+        enableZoomingSmallMap();
+
+        function zoomed() {
+            if (selectionEnabled) {
+                var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+                zoom.scale(mainSvgTransformObj.scale[0]);
+                zoom.translate(mainSvgTransformObj.translate);
+            } else {
+                var scaling = d3.event.scale;
+                var newTranslatePos = d3.event.translate;
+                svgParent.selectAll("rect.selection").remove();
+                mainSvg.attr("transform", "translate(" + newTranslatePos + ")scale(" + scaling + ")");
+                addRectToSmallMap(newTranslatePos, scaling);
+            }
         }
 
-        enableZoomingSmallMap();
+        function reset() {
+            zoom.translate([0, 0]).scale(1);
+            mainSvg.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")");
+            addRectToSmallMap(zoom.translate(), zoom.scale());
+        }
     };
 
     var enableZoomingSmallMap = function () {
@@ -166,19 +160,18 @@ function Layout() {
             .scaleExtent([1, 1])
             .on("zoom", zoomed);
         function zoomed() {
-            var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
-            var mainSvgPosition = mainSvgTransformObj.translate;
-            var mainSvgScaling = mainSvgTransformObj.scale[0];
-            var newTranslatePos = [-1 * mainSvgPosition [0] / mainSvgScaling * graphUtilityObj.scalingOfSmallMap() + d3.event.translate[0] - prevMiniSvgD3Translate[0],
-                    -1 * mainSvgPosition[1] / mainSvgScaling * graphUtilityObj.scalingOfSmallMap() + d3.event.translate[1] - prevMiniSvgD3Translate[1]];
+            var mainSvgScaling = d3.transform(mainSvg.attr("transform")).scale[0];
+            var newTranslatePos = d3.event.translate;
 
-            var rectObj = d3.select(".miniSVG").select("rect");
-            rectObj.attr("transform", "translate(" + newTranslatePos + ")");
+            d3.select(".miniSVG").select("rect")
+                .attr("transform", "translate(" + newTranslatePos + ")");
+            zoomSmallMap.translate(newTranslatePos);
+
             var scalingFactor = 1 / graphUtilityObj.scalingOfSmallMap();
             var x = -1 * newTranslatePos[0] * scalingFactor * mainSvgScaling,
                 y = -1 * newTranslatePos[1] * scalingFactor * mainSvgScaling;
-            mainSvg.attr("transform", "translate(" + [x, y] + ")scale(" + d3.transform(mainSvg.attr("transform")).scale[0] + ")");
-            prevMiniSvgD3Translate = d3.event.translate;
+            zoom.translate([x, y]).scale(mainSvgScaling);
+            mainSvg.attr("transform", "translate(" + zoom.translate() + ")scale(" + zoom.scale() + ")");
         }
     };
 
@@ -209,6 +202,7 @@ function Layout() {
         if (!rect[0][0]) {
             rect = d3.select(".miniSVG").append("rect");
         }
+        var newTranslatePosition = [-1 * initialCoordinates[0] * scalingFactor + 1, -1 * initialCoordinates[1] * scalingFactor + 1];
         rect.attr({
             rx: 2,
             ry: 2,
@@ -217,8 +211,9 @@ function Layout() {
             y: 0,
             width: visibleWidth * scalingFactor - 4,
             height: visibleHeight * scalingFactor - 2,
-            transform: "translate(" + [-1 * initialCoordinates[0] * scalingFactor + 1, -1 * initialCoordinates[1] * scalingFactor + 1] + ")"
+            transform: "translate(" + newTranslatePosition + ")"
         });
+        zoomSmallMap.translate(newTranslatePosition);
     };
 
     var enableArrowHeads = function () {
@@ -269,7 +264,7 @@ function Layout() {
         renderEdge();
     };
 
-    var renderEdge = function (skipAnimation) {
+    var renderEdge = function () {
         var tempLinkObj = links;
         //Appending edges to the layout.
         tempLinkObj.style("stroke", function (d) {
@@ -301,8 +296,7 @@ function Layout() {
                 target.x + "," +
                 target.y;
         }).transition().ease("linear").duration(600).attr("d", function (d) {
-            var dx = d.target.x - d.source.x,
-                dy = d.target.y - d.source.y;
+            var dx = d.target.x - d.source.x;
             var point = 0;
             if (dx === 0) {
                 point = d.source.x - 90;
@@ -346,19 +340,19 @@ function Layout() {
 
     var renderNode = function () {
         /*var nodesToBeDeleted = nodes.exit();
-        var noNodesDeleted = (Object.keys(nodesToBeDeleted[0]).length === 1);
-        if(!noNodesDeleted){
-            nodesToBeDeleted
-                .transition().duration(600)
-                .attr("transform", function (d) {
-                    var x = d.x, y = d.y;
-                    if (currentNodObj !== null) {
-                        x = currentNodObj.x;
-                        y = currentNodObj.y;
-                    }
-                    return "translate(" + x + "," + y + ")";
-                }).remove();
-        }*/
+         var noNodesDeleted = (Object.keys(nodesToBeDeleted[0]).length === 1);
+         if(!noNodesDeleted){
+         nodesToBeDeleted
+         .transition().duration(600)
+         .attr("transform", function (d) {
+         var x = d.x, y = d.y;
+         if (currentNodObj !== null) {
+         x = currentNodObj.x;
+         y = currentNodObj.y;
+         }
+         return "translate(" + x + "," + y + ")";
+         }).remove();
+         }*/
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
             if (!d.rendered) {
@@ -405,12 +399,13 @@ function Layout() {
     };
 
     var attachEventsToNode = function () {
-        function contextMenuCallback (d){
+        function contextMenuCallback(d) {
             d3.event.preventDefault();
             showContextMenu(d);
         }
+
         //Adding events to the node.
-        nodes.on('contextmenu',contextMenuCallback)
+        nodes.on('contextmenu', contextMenuCallback)
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
             .on('click', thisRef.highlightConnectedNodes);
@@ -481,7 +476,7 @@ function Layout() {
         recursivelyDelete(nodeId);
         function recursivelyDelete(nodeId) {
             var nodeObj = nodeLinkedInfo[nodeId];
-            if(!nodeObj){
+            if (!nodeObj) {
                 return;
             }
             for (var childId in nodeObj.incoming) {
@@ -500,7 +495,7 @@ function Layout() {
         thisRef.update();
     };
 
-    var transitionDeletedNode = function(){
+    var transitionDeletedNode = function () {
         nodesToBeDeleted
             .transition().duration(600)
             .attr("transform", function (d) {
@@ -520,7 +515,7 @@ function Layout() {
         recursivelyDelete(nodeId);
         function recursivelyDelete(nodeId) {
             var nodeObj = nodeLinkedInfo[nodeId];
-            if(!nodeObj){
+            if (!nodeObj) {
                 return;
             }
             for (var childId in nodeObj.outgoing) {
@@ -616,11 +611,11 @@ function Layout() {
         thisRef.update();
     };
 
-    this.getSelectedNodes = function(){
-      return selectedNodes;
+    this.getSelectedNodes = function () {
+        return selectedNodes;
     };
 
-    this.isNodesHighlighted = function(){
+    this.isNodesHighlighted = function () {
         return isNodeHighlighted;
     };
 
