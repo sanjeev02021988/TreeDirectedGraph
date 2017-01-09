@@ -11,12 +11,11 @@ function GraphUtility(height, width, x0, y0, paneCount) {
     var minSpacing = 25;
 
     thisRef.currentRootObjYPos = 0;
-    var currentRootObj = null;
+    thisRef.currentRootObj = null;
 
     thisRef.getGraphObj = function (graphJson, nodeId) {
         updateNodesAndLinksMaps(graphJson, nodeId);
         updateCurrentRootObjYPos(nodeId);
-        updateWidthInNodesMap();
         thisRef.updateNodesAndLinksArr(minSpacing);
         return {
             nodes: thisRef.nodes,
@@ -25,13 +24,14 @@ function GraphUtility(height, width, x0, y0, paneCount) {
     };
 
     thisRef.updateNodesAndLinksArr = function (tMinSpacing) {
-        minSpacing = tMinSpacing;
+        minSpacing = parseInt(tMinSpacing);
+        updateWidthInNodesMap();
         updateLinksArr();
         updateNodesArrAndCoordinates();
     };
 
     thisRef.getRenderingCoordinates = function (svg) {
-        var nodeObj = thisRef.nodesMap[currentRootObj.id];
+        var nodeObj = thisRef.nodesMap[thisRef.currentRootObj.id];
         var translate = d3.transform(svg.attr("transform")).translate;
         return [x0 + translate[0], y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
     };
@@ -40,7 +40,6 @@ function GraphUtility(height, width, x0, y0, paneCount) {
         deleteNodesFromGraphObj(nodesToDelete);
         deleteLinksFromGraphObj(linksToDelete);
         updateCurrentRootObjYPos(nodeId);
-        updateWidthInNodesMap();
         thisRef.updateNodesAndLinksArr(minSpacing);
     };
 
@@ -50,11 +49,11 @@ function GraphUtility(height, width, x0, y0, paneCount) {
     };
 
     var updateCurrentRootObjYPos = function(nodeId){
-        currentRootObj = thisRef.nodesMap[nodeId];
-        if (typeof currentRootObj.y === "undefined") {
+        thisRef.currentRootObj = thisRef.nodesMap[nodeId];
+        if (typeof thisRef.currentRootObj.y === "undefined") {
             thisRef.currentRootObjYPos = height / 2;
         } else {
-            thisRef.currentRootObjYPos = currentRootObj.y;
+            thisRef.currentRootObjYPos = thisRef.currentRootObj.y;
         }
     };
 

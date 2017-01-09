@@ -50,6 +50,7 @@ function Layout() {
         graphUtilityObj = new GraphUtility(visibleHeight, visibleWidth, mainSvgConfig.x0, mainSvgConfig.y0, configObj.paneCount);
         //Convert tree json into graph obj which has nodes and edges.
         graph = graphUtilityObj.getGraphObj(tConfigObj.data, tConfigObj.rootNodeId);
+        currentNodObj = graphUtilityObj.currentRootObj;
     };
 
     thisRef.reDraw = function (tStyleObj) {
@@ -274,7 +275,7 @@ function Layout() {
             }
             return edgeColor;
         });
-        tempLinkObj.attr("d", function (d) {
+        /*links.exit().transition().duration(600).attr("d", function (d) {
             var dx = d.target.x - d.source.x;
             var point = 0;
             if (dx === 0) {
@@ -282,35 +283,60 @@ function Layout() {
             } else {
                 point = d.source.x + 90;
             }
+            return "M" +
+                currentNodObj.x + "," +
+                currentNodObj.y + "C" + point + "," +
+                currentNodObj.y + " " + point + "," +
+                currentNodObj.y + " " +
+                currentNodObj.x + "," +
+                currentNodObj.y;
+        });*/
+        tempLinkObj.attr("d", function (d) {
+            var dx = d.target.x - d.source.x,
+                point = 0;
             var source = d.source;
             var target = d.target;
             if (!d.rendered && currentNodObj !== null) {
                 source = currentNodObj;
                 target = currentNodObj;
             }
-            return "M" +
-                source.x + "," +
-                source.y + "C" + point + "," +
-                source.y + " " + point + "," +
-                target.y + " " +
-                target.x + "," +
-                target.y;
-        }).transition().ease("linear").duration(600).attr("d", function (d) {
-            var dx = d.target.x - d.source.x;
-            var point = 0;
-            if (dx === 0) {
-                point = d.source.x - 90;
-            } else {
-                point = d.source.x + 90;
+            var pathStr = "M" +
+                source.x + "," + source.y;
+            if (edgeType === "CURVE") {
+                if (dx === 0) {
+                    point = d.source.x - 90;
+                } else {
+                    point = d.source.x + 90;
+                }
+                pathStr += "C" + point + "," +
+                    source.y + " " + point + "," +
+                    target.y + " ";
+            }else{
+                pathStr += "A0,0 0 0,1 ";
             }
+            pathStr += target.x + "," + target.y;
+            return pathStr;
+        }).transition().ease("linear").duration(600).attr("d", function (d) {
+            var dx = d.target.x - d.source.x,
+                point = 0;
             d.rendered = true;
-            return "M" +
-                d.source.x + "," +
-                d.source.y + "C" + point + "," +
-                d.source.y + " " + point + "," +
-                d.target.y + " " +
-                d.target.x + "," +
-                d.target.y;
+            var source = d.source, target = d.target;
+            var pathStr = "M" +
+                source.x + "," + source.y;
+            if (edgeType === "CURVE") {
+                if (dx === 0) {
+                    point = d.source.x - 90;
+                } else {
+                    point = d.source.x + 90;
+                }
+                pathStr += "C" + point + "," +
+                    source.y + " " + point + "," +
+                    target.y + " ";
+            }else{
+                pathStr += "A0,0 0 0,1 ";
+            }
+            pathStr += target.x + "," + target.y;
+            return pathStr;
         });
     };
 
@@ -339,20 +365,12 @@ function Layout() {
     };
 
     var renderNode = function () {
-        /*var nodesToBeDeleted = nodes.exit();
-         var noNodesDeleted = (Object.keys(nodesToBeDeleted[0]).length === 1);
-         if(!noNodesDeleted){
-         nodesToBeDeleted
-         .transition().duration(600)
-         .attr("transform", function (d) {
-         var x = d.x, y = d.y;
-         if (currentNodObj !== null) {
-         x = currentNodObj.x;
-         y = currentNodObj.y;
-         }
-         return "translate(" + x + "," + y + ")";
-         }).remove();
-         }*/
+        nodes.exit().transition()
+            .duration(600)
+            .attr("transform", function() {
+                return "translate(" + currentNodObj.x + "," + currentNodObj.y + ")";
+            })
+            .remove();
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
             if (!d.rendered) {
@@ -364,12 +382,12 @@ function Layout() {
                     y = currentNodObj.y;
                 }
             }
-            return "translate(" + x + "," + y + ")";
-        }).transition().ease("linear").duration(600).attr("transform", function (d) {
+            return "translate(" + [x, y] + ")";
+        }).transition().delay(600).ease("linear").duration(600).attr("transform", function (d) {
             d.rendered = true;
             var x = d.x;
             var y = d.y;
-            return "translate(" + x + "," + y + ")";
+            return "translate(" + [x, y] + ")";
         });
     };
 
@@ -493,19 +511,6 @@ function Layout() {
 
         graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
-    };
-
-    var transitionDeletedNode = function () {
-        nodesToBeDeleted
-            .transition().duration(600)
-            .attr("transform", function (d) {
-                var x = d.x, y = d.y;
-                if (currentNodObj !== null) {
-                    x = currentNodObj.x;
-                    y = currentNodObj.y;
-                }
-                return "translate(" + x + "," + y + ")";
-            }).remove();
     };
 
     this.deleteChildren = function (nodeId) {
