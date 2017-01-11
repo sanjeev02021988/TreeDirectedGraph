@@ -23,13 +23,6 @@ function NodeUtility() {
             .style("fill", function (d) {
                 return color(d.level);
             });
-
-        nodes.exit().transition()
-            .duration(600)
-            .attr("transform", function () {
-                return "translate(" + currentNodObj.x + "," + currentNodObj.y + ")";
-            })
-            .remove();
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
             if (!d.rendered) {
@@ -42,13 +35,19 @@ function NodeUtility() {
                 }
             }
             return "translate(" + [x, y] + ")";
-        }).transition().delay(600).ease("linear").duration(600).attr("transform", function (d) {
+        }).transition().ease("linear").duration(600).attr("transform", function (d) {
             d.rendered = true;
             var x = d.x;
             var y = d.y;
             return "translate(" + [x, y] + ")";
         });
         self.attachLabelToNode(newNodes, nodes);
+
+        nodes.exit().transition()
+            .duration(600)
+            .attr("transform", function () {
+                return "translate(" + currentNodObj.x + "," + currentNodObj.y + ")";
+            }).remove();
     };
 
     self.attachLabelToNode = function (newNodes, nodes) {

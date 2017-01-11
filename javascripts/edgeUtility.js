@@ -52,22 +52,26 @@ function EdgeUtility() {
             return generatePath(d);
         });
 
-        /*links.exit().transition().duration(600).attr("d", function (d) {
-         var dx = d.target.x - d.source.x;
-         var point = 0;
-         if (dx === 0) {
-         point = d.source.x - 90;
-         } else {
-         point = d.source.x + 90;
-         }
-         return "M" +
-         currentNodObj.x + "," +
-         currentNodObj.y + "C" + point + "," +
-         currentNodObj.y + " " + point + "," +
-         currentNodObj.y + " " +
-         currentNodObj.x + "," +
-         currentNodObj.y;
-         });*/
+        tempLinkObj.exit().transition().duration(600).attr("d", function (d) {
+            var dx = d.target.x - d.source.x,
+                point = 0;
+            var pathStr = "M" +
+                currentNodObj.x + "," + currentNodObj.y;
+            if (type === "CURVE") {
+                if (dx === 0) {
+                    point = currentNodObj.x - 90;
+                } else {
+                    point = currentNodObj.x + 90;
+                }
+                pathStr += "C" + point + "," +
+                    currentNodObj.y + " " + point + "," +
+                    currentNodObj.y + " ";
+            } else {
+                pathStr += "A0,0 0 0,1 ";
+            }
+            pathStr += currentNodObj.x + "," + currentNodObj.y;
+            return pathStr;
+        }).remove();
     };
 
     var generatePath = function (d, currentNodObj) {

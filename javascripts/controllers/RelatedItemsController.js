@@ -14,14 +14,14 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
         var rootNodeId = self.config.rootNodeId;
         RelatedItemsService.getNodeData(rootNodeId).then(function (response) {
             var graphJson = response.data;
-            /*for (var i = 6; i < 20; i++) {
+            for (var i = 6; i < 20; i++) {
                 var id = "Cube" + i;
                 graphJson[rootNodeId].outgoing.push(id);
                 graphJson[id] = {
                     "name": id,
                     "depth": 3
                 };
-            }*/
+            }
             self.config.data = graphJson;
             $scope.$broadcast("toggleGraphData");
         });
@@ -51,6 +51,7 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
     };
 
     self.config.callbacks.onNodeRightClick = function (nodeObj, layoutObj) {
+        $.contextMenu('destroy');
         var actionItems = {
             showInComingNodes: {
                 name: "Connected Nodes...",
@@ -122,6 +123,9 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
                 }
             }
         };
-        return actionItems;
+        $.contextMenu({
+            selector: 'g.node',
+            items: actionItems
+        });
     };
 }]);

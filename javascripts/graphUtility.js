@@ -34,7 +34,7 @@ function GraphUtility(height, width, x0, y0, configObj) {
     thisRef.getRenderingCoordinates = function (svg) {
         var nodeObj = thisRef.nodesMap[thisRef.currentRootObj.id];
         var translate = d3.transform(svg.attr("transform")).translate;
-        return [x0 + translate[0], y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
+        return [x0 + translate[0] + (width/2 - nodeObj.x), y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
     };
 
     thisRef.deleteNodesAndLinksFromGraphObj = function (nodeId, nodesToDelete, linksToDelete) {

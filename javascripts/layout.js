@@ -78,12 +78,6 @@ function Layout() {
 
     thisRef.update = function () {
         updateLayout();
-        nodes.exit().transition().remove();
-        links.exit().transition().remove();
-        var initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
-        var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
-        mainSvg.attr("transform", "translate(" + initialCoordinates + ")scale(" + mainSvgTransformObj.scale[0] + ")");
-        addRectToSmallMap();
     };
 
     thisRef.draw = function () {
@@ -99,6 +93,15 @@ function Layout() {
         d3.select(".miniSVG")
             .select("g")
             .attr("transform", "scale(" + graphUtilityObj.scalingOfSmallMap() + ")");
+        translateToCenter();
+    };
+
+    var translateToCenter = function(){
+        var initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
+        var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
+        mainSvg.attr("transform", "translate(" + initialCoordinates + ")scale(" + mainSvgTransformObj.scale[0] + ")");
+        addRectToSmallMap(initialCoordinates);
+        zoom.translate(initialCoordinates);
     };
 
     var initializeLayout = function () {
@@ -177,14 +180,14 @@ function Layout() {
         addRectToSmallMap([0, 0]);
     };
 
-    var addRectToSmallMap = function (initialCoordinates, scalling) {
+    var addRectToSmallMap = function (initialCoordinates, scaling) {
         if (!initialCoordinates) {
             initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
         }
-        if (!scalling) {
-            scalling = 1;
+        if (!scaling) {
+            scaling = 1;
         }
-        var scalingFactor = graphUtilityObj.scalingOfSmallMap() / scalling;
+        var scalingFactor = graphUtilityObj.scalingOfSmallMap() / scaling;
         var rect = d3.select(".miniSVG").select("rect");
         if (!rect[0][0]) {
             rect = d3.select(".miniSVG").append("rect");
@@ -236,10 +239,12 @@ function Layout() {
     };
 
     var attachEventsToNode = function () {
-        function contextMenuCallback(d) {
+        function contextMenuCallback(nodeObj) {
             d3.event.preventDefault();
-            showContextMenu(d);
+            currentNodObj = nodeObj;
+            configObj.callbacks.onNodeRightClick(nodeObj, thisRef);
         }
+        var dblClickEventInPropagation = false;
         function nodeDblClickCallback(nodeObj){
             d3.event.stopPropagation();
             dblClickEventInPropagation = true;
@@ -285,7 +290,6 @@ function Layout() {
         });
     };
 
-    var dblClickEventInPropagation = false;
     this.highlightConnectedNodes = function (nodeObj, forwardDirection) {
         if (!isNodeHighlighted) {
             var connectedNodeMap = [];
@@ -467,26 +471,15 @@ function Layout() {
                     }
                 });
             }
-        })
-            .on("mouseup", function () {
-                //Remove selection frame
-                tempMainSVG.selectAll("rect.selection").remove();
-            });
+        }).on("mouseup", function () {
+            //Remove selection frame
+            tempMainSVG.selectAll("rect.selection").remove();
+        });
     };
 
     this.updateGraph = function (graphJson, rootNode) {
         graphUtilityObj.getGraphObj(graphJson, rootNode.name);
         thisRef.update();
-    };
-
-    var showContextMenu = function (nodeObj) {
-        currentNodObj = nodeObj;
-        $.contextMenu('destroy');
-        var actionItems = configObj.callbacks.onNodeRightClick(nodeObj, thisRef);
-        $.contextMenu({
-            selector: 'g.node',
-            items: actionItems
-        });
     };
 
     this.zoomInOut = function (incrementFactor) {
