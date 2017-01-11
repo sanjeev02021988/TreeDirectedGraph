@@ -2,12 +2,24 @@ function NodeUtility() {
     var self = this;
     var radius = 10;
     var labelDirection = "RIGHT";
-    //Providing support for dynamic generation of colors.
-    var color = d3.scale.category20();
-
-    self.init = function (configObj) {
-        radius = parseInt(configObj.radius);
-        labelDirection = configObj.label.direction;
+    var color = null;
+    var configObj = null;
+    self.init = function (tConfigObj) {
+        configObj = tConfigObj;
+        radius = parseInt(tConfigObj.radius);
+        labelDirection = tConfigObj.label.direction;
+        if(tConfigObj.color){
+            color = function(i){
+                if(i < tConfigObj.color.length){
+                    return tConfigObj.color[i];
+                }else{
+                    return "steelblue";
+                }
+            };
+        }else{
+            //Providing support for dynamic generation of colors.
+            color = d3.scale.category20();
+        }
     };
 
     self.renderNode = function (nodes, currentNodObj) {
@@ -18,11 +30,13 @@ function NodeUtility() {
         //Adding circle to the g tag of the node.
         newNodes.append("circle").attr({
             'r': radius + 4,
-            class: 'outer'});
+            class: configObj.CSS.select
+        });
         newNodes.append("circle").attr('r', radius)
             .style("fill", function (d) {
                 return color(d.level);
             });
+
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
             if (!d.rendered) {

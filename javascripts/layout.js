@@ -291,21 +291,24 @@ function Layout() {
     };
 
     this.highlightConnectedNodes = function (nodeObj, forwardDirection) {
+        if(!configObj.style.node.CSS.disable && !configObj.style.edge.CSS.disable){
+            return;
+        }
         if (!isNodeHighlighted) {
             var connectedNodeMap = [];
 
             getConnectedNodeMap(connectedNodeMap, nodeObj.id, forwardDirection);
-            nodes.style("opacity", function (d) {
-                return connectedNodeMap[d.id] ? 1 : 0.2;
+            nodes.classed(configObj.style.node.CSS.disable, function (d) {
+                return !connectedNodeMap[d.id];
             });
-            links.style("opacity", function (d) {
-                return connectedNodeMap[d.target.id] && connectedNodeMap[d.source.id] ? 1 : 0.01;
+            links.classed(configObj.style.edge.CSS.disable, function (d) {
+                return !(connectedNodeMap[d.target.id] && connectedNodeMap[d.source.id]);
             });
             isNodeHighlighted = true;
         } else {
             //Put them back to opacity=1
-            nodes.style("opacity", 1);
-            links.style("opacity", 1);
+            nodes.classed(configObj.style.node.CSS.disable, false);
+            links.classed(configObj.style.edge.CSS.disable, false);
             isNodeHighlighted = false;
         }
     };
@@ -375,7 +378,9 @@ function Layout() {
                 }
             }
         }
-
+        if(nodesToDelete.length === 0 && linksToDelete.length === 0){
+            return;
+        }
         graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
     };
@@ -401,7 +406,9 @@ function Layout() {
                 }
             }
         }
-
+        if(nodesToDelete.length === 0 && linksToDelete.length === 0){
+            return;
+        }
         graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
     };

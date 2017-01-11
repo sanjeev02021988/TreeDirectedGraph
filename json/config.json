@@ -3,13 +3,25 @@
         "node": {
             "radius": 20,
             "minSpacing": 50,
+            "CSS":{
+                "disable":"disabled",
+                "select":"outer"
+            },
             "label": {
                 "direction": "RIGHT"
-            }
+            },
+            "color":["#91a732", "#4cb4d8", "#47B3AA", "#2762A9", "#b7812e", "#b7812e"]
         },
         "edge": {
             "type": "STRAIGHT",
-            "color": "#999999"
+            "color": "#999999",
+            "CSS":{
+                "disable":"disabled"
+            }
+        },
+        "miniMap":{
+            "CSS":"",
+            "backgroundCSS":""
         }
     },
     "paneCount": 6
