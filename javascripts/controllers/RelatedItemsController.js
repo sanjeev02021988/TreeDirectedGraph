@@ -14,14 +14,14 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
         var rootNodeId = self.config.rootNodeId;
         RelatedItemsService.getNodeData(rootNodeId).then(function (response) {
             var graphJson = response.data;
-            for (var i = 6; i < 20; i++) {
+            /*for (var i = 6; i < 20; i++) {
                 var id = "Cube" + i;
                 graphJson[rootNodeId].outgoing.push(id);
                 graphJson[id] = {
                     "name": id,
                     "depth": 3
                 };
-            }
+            }*/
             self.config.data = graphJson;
             $scope.$broadcast("toggleGraphData");
         });
@@ -39,8 +39,18 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
         $scope.$broadcast("reRender");
         self.fnHideConfigDialog();
     };
+    self.config.callbacks = {};
 
-    self.config.getContextMenuItemsCallback = function (nodeObj, layoutObj) {
+    self.config.callbacks.onNodeClick  = function(nodeObj, layoutObj){
+        layoutObj.highlightConnectedNodes(nodeObj);
+    };
+
+    self.config.callbacks.onNodeDblClick = function(nodeObj, layoutObj){
+        var graphJson = RelatedItemsService.getDummyConnectedNodes(nodeObj, layoutObj.getGraphUtilityObj());
+        $scope.$broadcast("updateGraph",{graphJson:graphJson, nodeObj: nodeObj});
+    };
+
+    self.config.callbacks.onNodeRightClick = function (nodeObj, layoutObj) {
         var actionItems = {
             showInComingNodes: {
                 name: "Connected Nodes...",
@@ -84,6 +94,18 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
             callback: function () {
                 nodeObj.incoming = [];
                 layoutObj.deleteParent(nodeObj.name);
+            }
+        };
+        actionItems.keepSelf = {
+            name: "Keep Self...",
+            callback: function () {
+                layoutObj.keepLineage(nodeObj, true);
+            }
+        };
+        actionItems.keepLineage = {
+            name: "Keep Lineage...",
+            callback: function () {
+                layoutObj.keepLineage(nodeObj);
             }
         };
         var selectedNodeIds = Object.keys(layoutObj.getSelectedNodes());

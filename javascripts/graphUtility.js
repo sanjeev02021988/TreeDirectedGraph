@@ -1,4 +1,4 @@
-function GraphUtility(height, width, x0, y0, paneCount) {
+function GraphUtility(height, width, x0, y0, configObj) {
     var thisRef = this;
 
     thisRef.nodesMap = [];
@@ -8,7 +8,8 @@ function GraphUtility(height, width, x0, y0, paneCount) {
     thisRef.nodes = [];
     thisRef.links = [];
 
-    var minSpacing = 25;
+    var paneCount = configObj.paneCount;
+    var minSpacing = configObj.style.node.minSpacing;
 
     thisRef.currentRootObjYPos = 0;
     thisRef.currentRootObj = null;
@@ -111,8 +112,10 @@ function GraphUtility(height, width, x0, y0, paneCount) {
         var width = 0;
         for (var index = 0; index < nodeList.length; index++) {
             var childObj = tempNodesMap[nodeList[index]];
-            if (nodeObj.level < childObj.level && !childObj.iterated) {
-                width += updateWidthForOutgoingNodes(tempNodesMap, childObj);
+            if(childObj){
+                if (nodeObj.level < childObj.level && !childObj.iterated) {
+                    width += updateWidthForOutgoingNodes(tempNodesMap, childObj);
+                }
             }
         }
         if (width === 0) {
@@ -227,11 +230,13 @@ function GraphUtility(height, width, x0, y0, paneCount) {
             var tempY = y0;
             for (var index = 0; index < nodeList.length; index++) {
                 var childObj = tempNodesMap[nodeList[index]];
-                if (nodeObj.level < childObj.level && !childObj.iterated) {
-                    childObj.x = x0 + (2 * childObj.level + 1) * paneWidth / 2;
-                    childObj.y = tempY + childObj.width / 2;
-                    updateCoordinatesForOutgoingNodes(tempNodesMap, childObj, paneWidth, tempY);
-                    tempY += childObj.width;
+                if(childObj){
+                    if (nodeObj.level < childObj.level && !childObj.iterated) {
+                        childObj.x = x0 + (2 * childObj.level + 1) * paneWidth / 2;
+                        childObj.y = tempY + childObj.width / 2;
+                        updateCoordinatesForOutgoingNodes(tempNodesMap, childObj, paneWidth, tempY);
+                        tempY += childObj.width;
+                    }
                 }
             }
         }
