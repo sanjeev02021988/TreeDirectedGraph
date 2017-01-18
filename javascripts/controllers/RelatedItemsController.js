@@ -14,14 +14,14 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
         var rootNodeId = self.config.rootNodeId;
         RelatedItemsService.getNodeData(rootNodeId).then(function (response) {
             var graphJson = response.data;
-            for (var i = 6; i < 20; i++) {
-                var id = "Cube" + i;
-                graphJson[rootNodeId].outgoing.push(id);
-                graphJson[id] = {
-                    "name": id,
-                    "depth": 3
-                };
-            }
+            /*for (var i = 6; i < 20; i++) {
+                 var id = "Cube" + i;
+                 graphJson[rootNodeId].outgoing.push(id);
+                 graphJson[id] = {
+                     "name": id,
+                     "depth": 3
+                 };
+             }*/
             self.config.data = graphJson;
             $scope.$broadcast("toggleGraphData");
         });
@@ -41,13 +41,13 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
     };
     self.config.callbacks = {};
 
-    self.config.callbacks.onNodeClick  = function(nodeObj, layoutObj){
+    self.config.callbacks.onNodeClick = function (nodeObj, layoutObj) {
         layoutObj.highlightConnectedNodes(nodeObj);
     };
 
-    self.config.callbacks.onNodeDblClick = function(nodeObj, layoutObj){
+    self.config.callbacks.onNodeDblClick = function (nodeObj, layoutObj) {
         var graphJson = RelatedItemsService.getDummyConnectedNodes(nodeObj, layoutObj.getGraphUtilityObj());
-        $scope.$broadcast("updateGraph",{graphJson:graphJson, nodeObj: nodeObj});
+        $scope.$broadcast("updateGraph", {graphJson: graphJson, nodeObj: nodeObj});
     };
 
     self.config.callbacks.onNodeRightClick = function (nodeObj, layoutObj) {
@@ -57,7 +57,7 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
                 name: "Connected Nodes...",
                 callback: function () {
                     var graphJson = RelatedItemsService.getDummyConnectedNodes(nodeObj, layoutObj.getGraphUtilityObj());
-                    $scope.$broadcast("updateGraph",{graphJson:graphJson, nodeObj: nodeObj});
+                    $scope.$broadcast("updateGraph", {graphJson: graphJson, nodeObj: nodeObj});
                 }
             }
         };
@@ -124,7 +124,7 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
             }
         };
         $.contextMenu({
-            selector: 'g.node',
+            selector: 'g.node-point',
             items: actionItems
         });
     };

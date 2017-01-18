@@ -35,12 +35,11 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
         };
         var entityNamePrefix = ["RF", "DS", "DRD", "Cube", "WB", "DB"];
         var childDepth = rootNode.level + 1;
-        if(entityNamePrefix[childDepth]){
-            var startIndex = 0;
+        var startIndex = 0, i, id;
+        if (entityNamePrefix[childDepth]) {
             if (graphUtilityObj.paneNodesCount[childDepth]) {
                 startIndex = graphUtilityObj.paneNodesCount[childDepth].length;
             }
-            var i, id;
             for (i = startIndex; i < startIndex + 5; i++) {
                 id = entityNamePrefix[childDepth] + i;
                 graphJson[rootNode.id].outgoing.push(id);
@@ -51,7 +50,7 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
             }
         }
         var parentDepth = rootNode.level - 1;
-        if(entityNamePrefix[parentDepth]){
+        if (entityNamePrefix[parentDepth]) {
             startIndex = 0;
             if (graphUtilityObj.paneNodesCount[parentDepth]) {
                 startIndex = graphUtilityObj.paneNodesCount[parentDepth].length - 1;

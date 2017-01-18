@@ -1,6 +1,9 @@
-function GraphUtility(height, width, x0, y0, configObj) {
+function GraphUtility(dimObj, configObj) {
     var thisRef = this;
-
+    var height = dimObj.height,
+        width = dimObj.width,
+        x0 = dimObj.x0,
+        y0 = dimObj.y0;
     thisRef.nodesMap = [];
     thisRef.linksMap = [];
     thisRef.paneNodesCount = [];
@@ -14,6 +17,11 @@ function GraphUtility(height, width, x0, y0, configObj) {
     thisRef.currentRootObjYPos = 0;
     thisRef.currentRootObj = null;
 
+    thisRef.updateDimensions = function (tWidth, tHeight) {
+        width = tWidth;
+        height = tHeight;
+    };
+
     thisRef.getGraphObj = function (graphJson, nodeId) {
         updateNodesAndLinksMaps(graphJson, nodeId);
         updateCurrentRootObjYPos(nodeId);
@@ -25,7 +33,9 @@ function GraphUtility(height, width, x0, y0, configObj) {
     };
 
     thisRef.updateNodesAndLinksArr = function (tMinSpacing) {
-        minSpacing = parseInt(tMinSpacing);
+        if (tMinSpacing) {
+            minSpacing = parseInt(tMinSpacing);
+        }
         updateWidthInNodesMap();
         updateLinksArr();
         updateNodesArrAndCoordinates();
@@ -45,11 +55,11 @@ function GraphUtility(height, width, x0, y0, configObj) {
     };
 
     var panesHeightOccupied = 0;
-    thisRef.scalingOfSmallMap = function(){
-        return ((111/panesHeightOccupied > 230/width)? 230/width: 111/panesHeightOccupied);
+    thisRef.scalingOfSmallMap = function () {
+        return ((111 / panesHeightOccupied > 230 / width) ? 230 / width : 111 / panesHeightOccupied);
     };
 
-    var updateCurrentRootObjYPos = function(nodeId){
+    var updateCurrentRootObjYPos = function (nodeId) {
         thisRef.currentRootObj = thisRef.nodesMap[nodeId];
         if (typeof thisRef.currentRootObj.y === "undefined") {
             thisRef.currentRootObjYPos = height / 2;
@@ -58,7 +68,7 @@ function GraphUtility(height, width, x0, y0, configObj) {
         }
     };
 
-    var deleteLinksFromGraphObj = function(linksToDelete){
+    var deleteLinksFromGraphObj = function (linksToDelete) {
         var linkIdArrayFromNodes = thisRef.links.map(function (link) {
             return link.source.id + "_" + link.target.id;
         });
@@ -72,7 +82,7 @@ function GraphUtility(height, width, x0, y0, configObj) {
         }
     };
 
-    var deleteNodesFromGraphObj = function(nodesToDelete){
+    var deleteNodesFromGraphObj = function (nodesToDelete) {
         var nodeIdArrayFromNodes = thisRef.nodes.map(function (node) {
             return node.id;
         });
@@ -112,7 +122,7 @@ function GraphUtility(height, width, x0, y0, configObj) {
         var width = 0;
         for (var index = 0; index < nodeList.length; index++) {
             var childObj = tempNodesMap[nodeList[index]];
-            if(childObj){
+            if (childObj) {
                 if (nodeObj.level < childObj.level && !childObj.iterated) {
                     width += updateWidthForOutgoingNodes(tempNodesMap, childObj);
                 }
@@ -230,7 +240,7 @@ function GraphUtility(height, width, x0, y0, configObj) {
             var tempY = y0;
             for (var index = 0; index < nodeList.length; index++) {
                 var childObj = tempNodesMap[nodeList[index]];
-                if(childObj){
+                if (childObj) {
                     if (nodeObj.level < childObj.level && !childObj.iterated) {
                         childObj.x = x0 + (2 * childObj.level + 1) * paneWidth / 2;
                         childObj.y = tempY + childObj.width / 2;

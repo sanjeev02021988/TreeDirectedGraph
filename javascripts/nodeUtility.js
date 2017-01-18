@@ -8,15 +8,15 @@ function NodeUtility() {
         configObj = tConfigObj;
         radius = parseInt(tConfigObj.radius);
         labelDirection = tConfigObj.label.direction;
-        if(tConfigObj.color){
-            color = function(i){
-                if(i < tConfigObj.color.length){
+        if (tConfigObj.color) {
+            color = function (i) {
+                if (i < tConfigObj.color.length) {
                     return tConfigObj.color[i];
-                }else{
+                } else {
                     return "steelblue";
                 }
             };
-        }else{
+        } else {
             //Providing support for dynamic generation of colors.
             color = d3.scale.category20();
         }
@@ -26,11 +26,11 @@ function NodeUtility() {
         //Describing properties of the nodes.
         var newNodes = nodes.enter()
             .append("g")
-            .attr("class", "node");
+            .attr("class", "node-point");
         //Adding circle to the g tag of the node.
         newNodes.append("circle").attr({
             'r': radius + 4,
-            class: configObj.CSS.select
+            class: "outer"
         });
         newNodes.append("circle").attr('r', radius)
             .style("fill", function (d) {

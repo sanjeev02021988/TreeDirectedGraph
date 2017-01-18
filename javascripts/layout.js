@@ -6,9 +6,7 @@ function Layout() {
         nodes = null;
 
     var containerId = "";
-    var width = 0,
-        height = 0,
-        visibleWidth = 0,
+    var visibleWidth = 0,
         visibleHeight = 0;
 
     var svg = null,
@@ -33,6 +31,15 @@ function Layout() {
         edgeUtilityObj = new EdgeUtility(),
         nodeUtilityObj = new NodeUtility();
 
+    thisRef.updateDimensions = function (tWidth, tHeight) {
+        visibleWidth = tWidth;
+        visibleHeight = tHeight;
+        svgParent
+            .attr('width', visibleWidth)
+            .attr('height', visibleHeight)
+        graphUtilityObj.updateDimensions(tWidth, tHeight);
+    };
+
     thisRef.getGraphUtilityObj = function () {
         return graphUtilityObj;
     };
@@ -49,17 +56,15 @@ function Layout() {
         selectionEnabled = enableSelection;
     };
 
-    thisRef.init = function (containerConfig, mainSvgConfig, tConfigObj) {
+    thisRef.init = function (containerConfig, tConfigObj) {
         containerId = containerConfig.id;
         visibleWidth = containerConfig.width;
         visibleHeight = containerConfig.height;
-        width = mainSvgConfig.width;
-        height = mainSvgConfig.height;
         configObj = tConfigObj;
         edgeUtilityObj.init(configObj.style.edge);
         nodeUtilityObj.init(configObj.style.node);
         nodeRadius = parseInt(configObj.style.node.radius);
-        graphUtilityObj = new GraphUtility(visibleHeight, visibleWidth, mainSvgConfig.x0, mainSvgConfig.y0, configObj);
+        graphUtilityObj = new GraphUtility(containerConfig, configObj);
         //Convert tree json into graph obj which has nodes and edges.
         graph = graphUtilityObj.getGraphObj(tConfigObj.data, tConfigObj.rootNodeId);
         currentNodObj = graphUtilityObj.currentRootObj;
@@ -96,7 +101,7 @@ function Layout() {
         translateToCenter();
     };
 
-    var translateToCenter = function(){
+    var translateToCenter = function () {
         var initialCoordinates = graphUtilityObj.getRenderingCoordinates(mainSvg);
         var mainSvgTransformObj = d3.transform(mainSvg.attr("transform"));
         mainSvg.attr("transform", "translate(" + initialCoordinates + ")scale(" + mainSvgTransformObj.scale[0] + ")");
@@ -163,20 +168,21 @@ function Layout() {
     var appendSVG = function () {
         //Add svg to the body.
         svgParent = d3.selectAll(".graphSVG");
-        svgParent.on("click",function(){
-            isNodeHighlighted = true;
-            thisRef.highlightConnectedNodes();
-        });
-
         svg = svgParent
-            .attr('width', width)
-            .attr('height', height)
+            .attr('width', visibleWidth)
+            .attr('height', visibleHeight)
             .append("g");
 
         d3.select(".miniSVG").call(zoomSmallMap);
         d3.select(".mainSVG").call(zoom);
+
         mainSvg = d3.select(".mainSVG")
             .select("g");
+        d3.select(".mainSVG").on("click", function () {
+            isNodeHighlighted = true;
+            thisRef.highlightConnectedNodes();
+        });
+
         addRectToSmallMap([0, 0]);
     };
 
@@ -229,7 +235,7 @@ function Layout() {
 
     var drawNode = function () {
         if (!nodes) {
-            nodes = svg.selectAll('.node');
+            nodes = svg.selectAll('.node-point');
         }
         nodes = nodes.data(graph.nodes, function (d) {
             return d.id;
@@ -244,22 +250,37 @@ function Layout() {
             currentNodObj = nodeObj;
             configObj.callbacks.onNodeRightClick(nodeObj, thisRef);
         }
+
         var dblClickEventInPropagation = false;
-        function nodeDblClickCallback(nodeObj){
+
+        function nodeDblClickCallback(nodeObj) {
             d3.event.stopPropagation();
             dblClickEventInPropagation = true;
             currentNodObj = nodeObj;
             configObj.callbacks.onNodeDblClick(nodeObj, thisRef);
         }
-        function nodeClickCallback(nodeObj){
+
+        function nodeClickCallback(nodeObj) {
+            var self = this;
             d3.event.stopPropagation();
             dblClickEventInPropagation = false;
-            setTimeout(function(){
-                if(dblClickEventInPropagation){
+            setTimeout(function () {
+                if (dblClickEventInPropagation) {
                     return;
                 }
-                configObj.callbacks.onNodeClick(nodeObj, thisRef);
-            },300);
+                if (selectionEnabled) {
+                    var selectedClass = getSelectionClass();
+                    if (!selectedNodes[nodeObj.name]) {
+                        d3.select(self).classed(selectedClass, true);
+                        selectedNodes[nodeObj.name] = 1;
+                    } else {
+                        d3.select(self).classed(selectedClass, false);
+                        delete selectedNodes[nodeObj.name];
+                    }
+                } else {
+                    configObj.callbacks.onNodeClick(nodeObj, thisRef);
+                }
+            }, 300);
         }
 
         //Adding events to the node.
@@ -267,7 +288,7 @@ function Layout() {
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
             .on('click', nodeClickCallback)
-            .on('dblclick',nodeDblClickCallback);
+            .on('dblclick', nodeDblClickCallback);
     };
 
     var updateNeighborInfo = function () {
@@ -291,7 +312,7 @@ function Layout() {
     };
 
     this.highlightConnectedNodes = function (nodeObj, forwardDirection) {
-        if(!configObj.style.node.CSS.disable && !configObj.style.edge.CSS.disable){
+        if (!configObj.style.node.CSS.disable && !configObj.style.edge.CSS.disable) {
             return;
         }
         if (!isNodeHighlighted) {
@@ -313,22 +334,22 @@ function Layout() {
         }
     };
 
-    this.keepLineage = function(nodeObj, keepSelf, forwardDirection){
+    this.keepLineage = function (nodeObj, keepSelf, forwardDirection) {
         var connectedNodeMap = [];
         var nodesToDelete = [];
         var linksToDelete = [];
-        if(keepSelf){
+        if (keepSelf) {
             connectedNodeMap[nodeObj.id] = 1;
-        }else{
+        } else {
             getConnectedNodeMap(connectedNodeMap, nodeObj.id, forwardDirection);
         }
-        graph.nodes.forEach(function(d){
-            if(!connectedNodeMap[d.id]){
+        graph.nodes.forEach(function (d) {
+            if (!connectedNodeMap[d.id]) {
                 nodesToDelete.push(d.id);
             }
         });
-        graph.links.forEach(function(d){
-            if(!(connectedNodeMap[d.target.id] && connectedNodeMap[d.source.id])){
+        graph.links.forEach(function (d) {
+            if (!(connectedNodeMap[d.target.id] && connectedNodeMap[d.source.id])) {
                 var parentObj = nodeLinkedInfo[d.source.id];
                 var childObj = nodeLinkedInfo[d.target.id];
                 linksToDelete.push(d.source.id + "_" + d.target.id);
@@ -340,12 +361,15 @@ function Layout() {
         thisRef.update();
     };
 
-    var getConnectedNodeMap = function(connectedNodeMap, nodeId, forwardDirection){
-        var nodeObj = nodeLinkedInfo[nodeId];
+    var getConnectedNodeMap = function (connectedNodeMap, nodeId, forwardDirection) {
         if (connectedNodeMap[nodeId]) {
             return;
         }
         connectedNodeMap[nodeId] = 1;
+        var nodeObj = nodeLinkedInfo[nodeId];
+        if (!nodeObj) {
+            return;
+        }
         if (typeof forwardDirection !== "boolean" || forwardDirection === true) {
             for (var index in nodeObj.outgoing) {
                 getConnectedNodeMap(connectedNodeMap, index, true);
@@ -378,7 +402,8 @@ function Layout() {
                 }
             }
         }
-        if(nodesToDelete.length === 0 && linksToDelete.length === 0){
+
+        if (nodesToDelete.length === 0 && linksToDelete.length === 0) {
             return;
         }
         graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
@@ -406,21 +431,38 @@ function Layout() {
                 }
             }
         }
-        if(nodesToDelete.length === 0 && linksToDelete.length === 0){
+
+        if (nodesToDelete.length === 0 && linksToDelete.length === 0) {
             return;
         }
         graphUtilityObj.deleteNodesAndLinksFromGraphObj(nodeId, nodesToDelete, linksToDelete);
         thisRef.update();
     };
 
+    var getSelectionClass = function () {
+        var selectedClass = configObj.style.node.CSS.select;
+        if (!selectedClass) {
+            selectedClass = "selected";
+        }
+        return selectedClass;
+    };
+
     var enableSelection = function () {
         var tempMainSVG = d3.select(".mainSVG");
+        var selectedClass = getSelectionClass();
+        var dragStart = false;
+        var mouseDown = false;
+        var isMouseMovedForFirtTime = false;
+        var initPosition = [];
         tempMainSVG.on("mousedown", function () {
-            if (d3.event.button === 0) {
-                selectedNodes = [];
-                d3.selectAll('g.node.selected').classed("selected", false);
-            }
+            mouseDown = true;
+            dragStart = false;
+            isMouseMovedForFirtTime = false;
             var p = d3.mouse(this);
+            initPosition = p;
+            if (!selectionEnabled) {
+                return;
+            }
             tempMainSVG.append("rect")
                 .attr({
                     rx: 6,
@@ -432,6 +474,22 @@ function Layout() {
                     height: 0
                 });
         }).on("mousemove", function () {
+            if (mouseDown) {
+                dragStart = true;
+            }
+            if (!selectionEnabled) {
+                return;
+            }
+            var currentPosition = d3.mouse(this);
+            if (Math.abs(initPosition[0] - currentPosition[0]) < 2 ||
+                Math.abs(initPosition[1] - currentPosition[1]) < 2) {
+                return;
+            }
+            if (mouseDown && !isMouseMovedForFirtTime && d3.event.which === 1) {
+                isMouseMovedForFirtTime = true;
+                selectedNodes = [];
+                d3.selectAll('g.node-point.' + selectedClass).classed(selectedClass, false);
+            }
             var s = tempMainSVG.select("rect.selection");
             if (!s.empty()) {
                 var p = d3.mouse(this),
@@ -458,8 +516,8 @@ function Layout() {
                     d.height = move.y;
                 }
                 s.attr(d);
-                d3.selectAll('g.node > circle').each(function (node_data) {
-                    if (!d3.select(this).classed("selected")) {
+                d3.selectAll('g.node-point > circle').each(function (node_data) {
+                    if (!d3.select(this).classed(selectedClass)) {
                         var mainSvgTransformObj = d3.transform(tempMainSVG.select("g").attr("transform"));
                         var mainSvgTranslateObj = mainSvgTransformObj.translate;
                         var scaling = mainSvgTransformObj.scale[0];
@@ -469,19 +527,31 @@ function Layout() {
                             scaling * (nodeDataX + nodeRadius) <= d.x + d.width &&
                             scaling * (nodeDataY - nodeRadius) >= d.y &&
                             scaling * (nodeDataY + nodeRadius) <= d.y + d.height) {
-                            d3.select(this.parentNode).classed("selected", true);
+                            d3.select(this.parentNode).classed(selectedClass, true);
                             selectedNodes[node_data.name] = 1;
                         } else {
-                            d3.select(this.parentNode).classed("selected", false);
+                            d3.select(this.parentNode).classed(selectedClass, false);
                             delete selectedNodes[node_data.name];
                         }
                     }
                 });
             }
-        }).on("mouseup", function () {
+        }).on("mouseup", mouseUp)
+            .on("mouseleave", mouseUp);
+        function mouseUp() {
+            mouseDown = false;
             //Remove selection frame
             tempMainSVG.selectAll("rect.selection").remove();
-        });
+            if (!dragStart && d3.event.which === 1) {
+                if (selectionEnabled) {
+                    return;
+                }
+                console.log("cleaning selection in mouseup");
+                selectedNodes = [];
+                d3.selectAll('g.node-point.' + selectedClass).classed(selectedClass, false);
+            }
+            dragStart = false;
+        }
     };
 
     this.updateGraph = function (graphJson, rootNode) {
