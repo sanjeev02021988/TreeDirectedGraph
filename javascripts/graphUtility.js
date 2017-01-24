@@ -44,13 +44,19 @@ function GraphUtility(dimObj, configObj) {
     thisRef.getRenderingCoordinates = function (svg) {
         var nodeObj = thisRef.nodesMap[thisRef.currentRootObj.id];
         var translate = d3.transform(svg.attr("transform")).translate;
-        return [x0 + translate[0], y0 + translate[1] + (thisRef.currentRootObjYPos - nodeObj.y)];
+        var displacementY = 0;
+        if(nodeObj){
+            displacementY = thisRef.currentRootObjYPos - nodeObj.y;
+        }
+        return [x0 + translate[0], y0 + translate[1] + displacementY];
     };
 
     thisRef.deleteNodesAndLinksFromGraphObj = function (nodeId, nodesToDelete, linksToDelete) {
         deleteNodesFromGraphObj(nodesToDelete);
         deleteLinksFromGraphObj(linksToDelete);
+        if(nodeId){
         updateCurrentRootObjYPos(nodeId);
+        }
         thisRef.updateNodesAndLinksArr(minSpacing);
     };
 
@@ -152,6 +158,7 @@ function GraphUtility(dimObj, configObj) {
             thisRef.nodesMap[nodeId] = {
                 name: nodeObj.name,
                 id: nodeId,
+                "innerText":nodeObj.innerText,
                 level: nodeObj.depth,
                 isNew: true,
                 incoming: [],

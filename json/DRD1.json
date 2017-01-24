@@ -2,35 +2,43 @@
     "DRD1": {
         "name": "DRD1",
         "depth": 2,
+        "innerText":"R",
         "incoming": ["DS1", "DS2"],
         "outgoing": ["Cube1", "Cube2", "Cube3", "Cube4", "Cube5"]
     },
     "DS1": {
         "name": "DS1",
+        "innerText":"D",
         "depth": 1
     },
     "DS2": {
         "name": "DS2",
+        "innerText":"D",
         "depth": 1
     },
     "Cube1": {
         "name": "Cube1",
+        "innerText":"C",
         "depth": 3
     },
     "Cube2": {
         "name": "Cube2",
+        "innerText":"C",
         "depth": 3
     },
     "Cube3": {
         "name": "Cube3",
+        "innerText":"C",
         "depth": 3
     },
     "Cube4": {
         "name": "Cube4",
+        "innerText":"C",
         "depth": 3
     },
     "Cube5": {
         "name": "Cube5",
+        "innerText":"C",
         "depth": 3
     }
 }

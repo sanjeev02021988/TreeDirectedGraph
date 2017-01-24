@@ -123,6 +123,12 @@ angular.module("myApp").controller("RelatedItemsController", ["$scope", "Related
                 }
             }
         };
+        actionItems.deleteSelectedNodes = {
+            name: "Delete...",
+            callback: function () {
+                layoutObj.deleteNodes(selectedNodeIds);
+            }
+        };
         $.contextMenu({
             selector: 'g.node-point',
             items: actionItems

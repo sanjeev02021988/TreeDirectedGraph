@@ -9,6 +9,10 @@
     box-shadow: 5px 5px 50px lightgray;
 }
 
+.node-point .inside-txt {
+    font-size: 13px;
+    fill: #fff;
+}
 svg *::selection, svg *::-moz-selection, svg *::-webkit-selection {
     background: transparent;
 }

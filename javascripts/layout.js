@@ -382,6 +382,28 @@ function Layout() {
         }
     };
 
+
+    this.deleteNodes = function(nodeIdList){
+        var linksToDelete = [];
+        nodeIdList.forEach(function(nodeId){
+            var nodeObj = nodeLinkedInfo[nodeId];
+            if (!nodeObj) {
+                return;
+            }
+            graph.links.forEach(function(d){
+                if(d.target.id === nodeId || d.source.id === nodeId){
+                    var parentObj = nodeLinkedInfo[d.source.id];
+                    var childObj = nodeLinkedInfo[d.target.id];
+                    linksToDelete.push(d.source.id + "_" + d.target.id);
+                    delete parentObj.outgoing[d.target.id];
+                    delete childObj.incoming[d.source.id];
+                }
+            });
+        });
+        graphUtilityObj.deleteNodesAndLinksFromGraphObj(null, nodeIdList, linksToDelete);
+        thisRef.update();
+    };
+
     this.deleteParent = function (nodeId) {
         var nodesToDelete = [];
         var linksToDelete = [];

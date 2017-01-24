@@ -34,6 +34,7 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
             "outgoing": []
         };
         var entityNamePrefix = ["RF", "DS", "DRD", "Cube", "WB", "DB"];
+        var entityNameInnerText = ["F", "D", "R", "C", "WS", "DB"];
         var childDepth = rootNode.level + 1;
         var startIndex = 0, i, id;
         if (entityNamePrefix[childDepth]) {
@@ -45,7 +46,8 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
                 graphJson[rootNode.id].outgoing.push(id);
                 graphJson[id] = {
                     "name": id,
-                    "depth": childDepth
+                    "depth": childDepth,
+                    "innerText":entityNameInnerText[childDepth]
                 };
             }
         }
@@ -60,7 +62,8 @@ angular.module("myApp").service("RelatedItemsService", ["$http", "$q", function 
                 graphJson[rootNode.id].incoming.push(id);
                 graphJson[id] = {
                     "name": id,
-                    "depth": parentDepth
+                    "depth": parentDepth,
+                    "innerText":entityNameInnerText[parentDepth]
                 };
             }
         }

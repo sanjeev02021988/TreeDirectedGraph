@@ -36,6 +36,13 @@ function NodeUtility() {
             .style("fill", function (d) {
                 return color(d.level);
             });
+        newNodes.append("text")
+            .attr("class","inside-txt")
+            .attr("y","5")
+            .attr("text-anchor","middle")
+            .text(function(d){
+                return d.innerText;
+            });
 
         nodes.attr("transform", function (d) {
             var x = d.x, y = d.y;
